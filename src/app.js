@@ -4,9 +4,6 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
-// For image file uploads
-const multer = require('multer');
-
 const Router = require("../src/routes/router");
 
 const app = express();

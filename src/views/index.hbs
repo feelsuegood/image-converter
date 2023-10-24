@@ -1,20 +1,64 @@
 <html lang="en">
   <body>
     <div class="container">
-      <h1>cab432-a3</h1>
-      <p>We got this.<br />
-        ❤️</p>
-      <p>{{result}}</p>
-      <form
-        ref="uploadForm"
-        id="uploadForm"
-        action="/upload"
-        method="post"
-        encType="multipart/form-data"
-      >
-        <input type="file" name="image" />
-        <input type="submit" value="Upload!" />
+      <h1>Image Converter</h1>
+      <br />
+      <p>file size limit: 2MB</p>
+      <p>only JPEG, PNG, and GIF are available</p>
+      <p>max width and height are 800 pixels</p>
+      <form action="/upload" method="post" enctype="multipart/form-data">
+        <label for="width">Desired Width:</label>
+        <input
+          type="number"
+          name="width"
+          id="width"
+          required
+          required
+          min="1"
+          max="800"
+        />
+        <br />
+        <label for="height">Desired Height:</label>
+        <input
+          type="number"
+          name="height"
+          id="height"
+          required
+          required
+          min="1"
+          max="800"
+        />
+        <br />
+        <label for="format">Desired Format:</label>
+        <select name="format" id="format" required>
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+          <option value="gif">GIF</option>
+        </select>
+        <br />
+        <label for="image">Select Image:</label>
+        <input type="file" name="image" id="image" accept="image/*" required />
+        <br />
+        <button type="submit">Upload and Resize</button>
       </form>
+      {{#if result}}
+        <p>{{result}}</p>
+        <!-- Display the converted image -->
+        <img
+          src="data:image/jpeg;base64,{{convertedImage}}"
+          alt="Uploaded Image"
+        />
+        <!-- Add a download button -->
+        <div>
+          <a
+            href="data:image/jpeg;base64,{{convertedImage}}"
+            download={{newFilename}}
+          >
+            <br />
+            <button>Download Image</button>
+          </a>
+        </div>
+      {{/if}}
     </div>
   </body>
 </html>
