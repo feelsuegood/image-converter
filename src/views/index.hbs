@@ -3,7 +3,18 @@
     <div class="container">
       <h1>cab432-a3</h1>
       <p>We got this.<br />
-        🩷</p>
+        ❤️</p>
+      <p>{{result}}</p>
+      <form
+        ref="uploadForm"
+        id="uploadForm"
+        action="/upload"
+        method="post"
+        encType="multipart/form-data"
+      >
+        <input type="file" name="image" />
+        <input type="submit" value="Upload!" />
+      </form>
     </div>
   </body>
 </html>
