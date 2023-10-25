@@ -4,7 +4,11 @@ FROM node:lts
 # Copy app source
 COPY . /app
 
+# Set working directory
 WORKDIR /app
+
+# Install system dependencies for Sharp
+RUN apt-get update && apt-get install -y libvips-dev
 
 # Install app dependencies
 RUN npm install
