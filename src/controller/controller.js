@@ -83,21 +83,24 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Set up Multer upload configuration
+const fileSize = 2; // * file size limit: 5MB
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 }, // * file size limit: 2MB
+  limits: { fileSize: fileSize * 1024 * 1024 },
 });
 
 const pageTitle = "CAB432 Cloud Project Partners 14";
+const maxWidth = 1920;
+const maxHeight = 1080;
 
 // * load main page template
 const handleHome = (req, res) => {
   res.render("index", {
     pageTitle,
-    fileSize: 2,
-    maxWidth: 1920,
-    maxHeight: 1080,
+    fileSize,
+    maxWidth,
+    maxHeight,
   });
 };
 
@@ -157,7 +160,7 @@ const handleConvert = async (req, res) => {
       .receiveMessage({
         QueueUrl: process.env.AWS_SQS_URL,
         MaxNumberOfMessages: 1,
-        WaitTimeSeconds: 3,
+        WaitTimeSeconds: 5,
       })
       .promise();
 
@@ -182,9 +185,9 @@ const handleConvert = async (req, res) => {
         newFilename,
         convertedImage: imageBase64, // Pass the image data to the view
         originalFilename,
-        fileSize: 2,
-        maxWidth: 1920,
-        maxHeight: 1080,
+        fileSize,
+        maxWidth,
+        maxHeight,
       });
     }
   } catch (error) {
