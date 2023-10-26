@@ -36,3 +36,8 @@ select {
 .result-container {
   margin-bottom: 40px;
 }
+
+.converted-image {
+  max-width: 800px;
+  height: auto;
+}

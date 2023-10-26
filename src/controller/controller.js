@@ -86,14 +86,19 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 2 * 1024 * 1024 }, // * file size limit: 2MB
 });
 
 const pageTitle = "CAB432 Cloud Project Partners 14";
 
 // * load main page template
 const handleHome = (req, res) => {
-  res.render("index", { pageTitle });
+  res.render("index", {
+    pageTitle,
+    fileSize: 2,
+    maxWidth: 1920,
+    maxHeight: 1080,
+  });
 };
 
 // * convert an image by using sqs queue
@@ -177,6 +182,9 @@ const handleConvert = async (req, res) => {
         newFilename,
         convertedImage: imageBase64, // Pass the image data to the view
         originalFilename,
+        fileSize: 2,
+        maxWidth: 1920,
+        maxHeight: 1080,
       });
     }
   } catch (error) {

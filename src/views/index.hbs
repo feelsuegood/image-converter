@@ -3,9 +3,9 @@
     <div class="container">
       <div class="container info-section">
         <ul>
-          <li>File size limit: 2MB</li>
+          <li>File size limit: {{fileSize}}MB</li>
           <li>Only JPEG, PNG, and GIF are available</li>
-          <li>Max width and height are 800 pixels</li>
+          <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}</li>
         </ul>
       </div>
 
@@ -18,7 +18,7 @@
           required
           required
           min="1"
-          max="800"
+          max={{maxWidth}}
         />
         <br />
         <label for="height">Desired Height:</label>
@@ -29,7 +29,7 @@
           required
           required
           min="1"
-          max="800"
+          max={{maxHeight}}
         />
         <br />
         <label for="format">Desired Format:</label>
@@ -61,6 +61,7 @@
         <p style="font-family: 'Poppins';">{{result}}</p>
         <!-- Display the converted image -->
         <img
+          class="converted-image"
           src="data:image/jpeg;base64,{{convertedImage}}"
           alt="Uploaded Image"
         />
