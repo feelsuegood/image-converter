@@ -1,18 +1,21 @@
 const dotenv = require("dotenv");
 const AWS = require("aws-sdk");
 const sharp = require("sharp");
+const { uploadToS3 } = require("../utils/s3Utils");
 
 dotenv.config();
 
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
+
 const processMessage = async (message) => {
   console.log("🟢 SQS message body:", message.Body);
 
   // get the info from sqs message
-  const { filename, width, height, format, bucketName } = JSON.parse(
-    message.Body
-  );
+  const messageParams = JSON.parse(JSON.parse(message.Body).MessageBody);
+  const { filename, width, height, format, bucketName } = messageParams;
+  console.log("Parsed SQS message:", JSON.parse(message.Body));
+  console.log("Message Parameters:", messageParams);
 
   // get the original image from s3
   const params = {
@@ -24,6 +27,8 @@ const processMessage = async (message) => {
   console.log("🟢 S3 getObject Params:", params);
 
   try {
+    console.log(`🟢 Bucket: ${bucketName}, Filename: ${filename}`);
+
     const getObjectResponse = await s3.getObject(params).promise();
 
     // Check for empty or null response
@@ -40,14 +45,7 @@ const processMessage = async (message) => {
       .toBuffer();
 
     // Upload the converted image to S3
-    await s3
-      .upload({
-        Bucket: bucketName,
-        Key: filename,
-        Body: processedBuffer,
-        ContentType: `image/${format}`,
-      })
-      .promise();
+    await uploadToS3(bucketName, filename, processedBuffer, `image/${format}`);
 
     // Delete the processed message from the SQS queue
     try {
@@ -77,7 +75,6 @@ const pollSQSQueue = async () => {
 
     try {
       const { Messages } = await sqs.receiveMessage(params).promise();
-
       if (Messages && Messages.length > 0) {
         await processMessage(Messages[0]);
       }

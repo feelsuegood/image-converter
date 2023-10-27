@@ -1,3 +1,4 @@
+// Required modules for the project
 const dotenv = require("dotenv");
 const multer = require("multer");
 const path = require("path");
@@ -6,16 +7,24 @@ const sharp = require("sharp");
 const AWS = require("aws-sdk");
 const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
+const { uploadToS3 } = require("../utils/s3Utils");
+const { sendMessageToSQS } = require("../utils/sqsUtils");
 
 dotenv.config();
 
+// AWS S3 and SQS instances
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
-// * Create the S3 bucket
+// Constants for bucket and queue names
 const bucketName = "cloud-project-partners-14-s3";
 const queueName = "cloud-project-partners-14-sqs";
+const pageTitle = "CAB432 Cloud Project Partners 14";
+const fileSize = 2; // * file size limit: 5MB
+const maxWidth = 1920;
+const maxHeight = 1080;
 
+// * Create the S3 bucket
 async function createS3bucket() {
   try {
     await s3.createBucket({ Bucket: bucketName }).promise();
@@ -33,7 +42,7 @@ async function createS3bucket() {
   await createS3bucket();
 })();
 
-// * create sqs queue
+// * create SQS queue
 const createQueue = async (queueName) => {
   const params = {
     QueueName: queueName,
@@ -83,16 +92,11 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Set up Multer upload configuration
-const fileSize = 2; // * file size limit: 5MB
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: fileSize * 1024 * 1024 },
 });
-
-const pageTitle = "CAB432 Cloud Project Partners 14";
-const maxWidth = 1920;
-const maxHeight = 1080;
 
 // * load main page template
 const handleHome = (req, res) => {
@@ -121,20 +125,12 @@ const handleConvert = async (req, res) => {
   const newFilename = uuidv4() + "." + desiredFormat;
 
   // upload an original image file to s3
-  try {
-    await s3
-      .upload({
-        Bucket: bucketName,
-        Key: newFilename,
-        Body: imageBuffer,
-        ContentType: `image/${desiredFormat}`,
-      })
-      .promise();
-    console.log("🟢 uploaded successfully");
-  } catch (error) {
-    console.error("🔴 S3 upload error:", error);
-    return res.status(500).send("Failed to upload to S3");
-  }
+  await uploadToS3(
+    bucketName,
+    newFilename,
+    imageBuffer,
+    `image/${desiredFormat}`
+  );
 
   // Create a message to send to the SQS queue with relevant information
   const messageParams = {
@@ -149,11 +145,12 @@ const handleConvert = async (req, res) => {
   };
   console.log("🟢 messageParams:", messageParams);
 
-  try {
-    // Send the message to the SQS queue
-    console.log("🟢 Sending message to queue...");
-    await sqs.sendMessage(messageParams).promise();
+  await sendMessageToSQS(
+    process.env.AWS_SQS_URL,
+    JSON.stringify(messageParams)
+  );
 
+  try {
     // Wait for the SQS job to complete
     console.log("🟢 Waiting for message from queue...");
     const { Messages } = await sqs
@@ -166,7 +163,6 @@ const handleConvert = async (req, res) => {
 
     if (Messages && Messages.length > 0) {
       console.log("🟢 Message received. Processing...");
-      await processMessage(Messages[0]);
     } else {
       // Retrieve the uploaded image from S3
       const retrievedImage = await s3
@@ -192,7 +188,7 @@ const handleConvert = async (req, res) => {
     }
   } catch (error) {
     console.error(`🔴 Error: ${error.message}`);
-    res.render("index", {
+    res.status(500).render("index", {
       pageTitle,
       result: `Error uploading to S3: ${error.message}`,
     });
