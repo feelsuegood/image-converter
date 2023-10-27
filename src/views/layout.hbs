@@ -1,14 +1,117 @@
 <html lang="en">
   <head>
+    <meta charset="utf-8" />
     <title>{{pageTitle}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="image converter" />
+    <meta name="author" content="cloud project partners 14" />
+
+    <!-- Le styles -->
+    <link
+      href="https://getbootstrap.com/2.0.2/assets/css/bootstrap.css"
+      rel="stylesheet"
+    />
+    <style>
+      body { padding-top: 60px; /* 60px to make the container go all the way to
+      the bottom of the topbar */ }
+    </style>
+    <link
+      href="https://getbootstrap.com/2.0.2/assets/css/bootstrap-responsive.css"
+      rel="stylesheet"
+    />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="/images/favicon.png" />
+    <link
+      rel="apple-touch-icon-precomposed"
+      sizes="114x114"
+      href="https://getbootstrap.com/2.0.2/assets/ico/apple-touch-icon-114-precomposed.png"
+    />
+    <link
+      rel="apple-touch-icon-precomposed"
+      sizes="72x72"
+      href="https://getbootstrap.com/2.0.2/assets/ico/apple-touch-icon-72-precomposed.png"
+    />
+    <link
+      rel="apple-touch-icon-precomposed"
+      href="https://getbootstrap.com/2.0.2/assets/ico/apple-touch-icon-57-precomposed.png"
+    />
+
+    <link rel="stylesheet" href="/stylesheets/style.css" />
   </head>
   <body>
-    <header>
-    </header>
-    <main>
-      <div>
-        {{{body}}}
+    <header></header>
+    <div>
+      <div class="navbar navbar-fixed-top" style="height: 70px;">
+        <div class="navbar-inner">
+          <div
+            class="container"
+            style="height: 100%; display: flex; align-items: center;"
+          >
+            <a
+              class="btn btn-navbar"
+              data-toggle="collapse"
+              data-target=".nav-collapse"
+            >
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </a>
+            <a
+              class="brand"
+              href="/"
+              style="font-size: 40px; font-weight: bold;"
+            >Image Converter</a>
+          </div>
+        </div>
       </div>
-    </main>
+      <div>{{{body}}}</div>
+
+      <!-- Le javascript
+    ================================================== -->
+      <!-- Placed at the end of the document so the pages load faster -->
+      <script src="https://getbootstrap.com/2.0.2/assets/js/jquery.js"></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-transition.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-alert.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-modal.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-dropdown.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-scrollspy.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-tab.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-tooltip.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-popover.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-button.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-collapse.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-carousel.js"
+      ></script>
+      <script
+        src="https://getbootstrap.com/2.0.2/assets/js/bootstrap-typeahead.js"
+      ></script>
+    </div>
   </body>
 </html>

@@ -1,13 +1,13 @@
 const express = require("express");
 const Router = express.Router();
-
-const handleHome = (req, res) => {
-  const pageTitle = "hi";
-
-  res.render("index", { pageTitle });
-};
+const {
+  handleHome,
+  handleConvert,
+  upload,
+} = require("../controller/controller");
 
 /* GET home page. */
-Router.get("/", handleHome);
+/* POST upload and convrt image */
+Router.route("/").get(handleHome).post(upload.single("image"), handleConvert);
 
 module.exports = Router;

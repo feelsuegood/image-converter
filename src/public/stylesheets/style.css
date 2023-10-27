@@ -1,0 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Ubuntu:wght@400;500;700&family=Work+Sans:wght@400;600;800&display=swap");
+body {
+  font-family: "Poppins", sans-serif;
+  color: #484747;
+  padding-top: 90px;
+}
+a,
+a:visited {
+  color: #333;
+  text-decoration: none;
+}
+input[type="number"],
+select {
+  height: 30px; /* Adjust as needed */
+  width: px;
+}
+
+.info-section {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 20px 0;
+  width: 400px;
+  height: 60px;
+}
+
+.info-section ul {
+  list-style-type: square;
+}
+
+.info-section ul li {
+  line-height: 1.6;
+}
+
+.result-container {
+  margin-bottom: 40px;
+}
+
+.converted-image {
+  max-width: 800px;
+  height: auto;
+}
