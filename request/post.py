@@ -1,8 +1,11 @@
 import requests
 import time
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Define the URL
-url = 'http://ec2-54-252-66-179.ap-southeast-2.compute.amazonaws.com:3000/'
+url = os.getenv('REQUEST_URL')
 
 # Prepare the data to be sent in the POST request
 form_data = {
@@ -15,7 +18,7 @@ form_data = {
 num_requests = 100
 
 # Delay between requests in seconds
-delay = 2
+delay = 5
 
 for i in range(num_requests):
     try:
@@ -28,7 +31,7 @@ for i in range(num_requests):
 
             # Send the POST request
             response = requests.post(
-                url, data=form_data, files=files, timeout=50)
+                url, data=form_data, files=files, timeout=10)
 
             # Record the end time
             end_time = time.time()
@@ -43,6 +46,7 @@ for i in range(num_requests):
             else:
                 print(
                     f'Failed {i+1}/{num_requests}: {response.status_code}, {response.text}')
+
         # Add delay before the next request
         time.sleep(delay)
     except requests.exceptions.RequestException as e:
