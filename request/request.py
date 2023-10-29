@@ -10,8 +10,8 @@ load_dotenv()
 # Define the URL and other constants
 url = os.getenv('REQUEST_URL')
 RETRIES = 3
-MAX_THREADS = 5
-IMAGE_FILE = 'test-5kb.jpeg'
+MAX_THREADS = 100
+IMAGE_FILE = 'test-2mb.jpg'
 
 # Thread-safe print function
 
@@ -83,4 +83,4 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 
 if __name__ == "__main__":
-    perform_multiple_requests(1, 1000, 3)
+    perform_multiple_requests(1, 100, 5)

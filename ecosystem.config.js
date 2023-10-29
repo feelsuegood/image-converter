@@ -1,12 +1,8 @@
 module.exports = {
   apps: [
     {
-      name: "web",
+      name: "cloud-project-14",
       script: "./src/bin/www",
-    },
-    {
-      name: "sqs",
-      script: "./src/workers/sqsWorker.js",
     },
   ],
 };

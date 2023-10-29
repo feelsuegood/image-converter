@@ -1,25 +1,28 @@
+// * Import necessary modules
 const dotenv = require("dotenv");
 dotenv.config();
 
+// * Load AWS SDK and other modules
+const AWS = require("aws-sdk");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
-const AWS = require("aws-sdk");
 const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
 
+// * Initialize AWS services
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
-// * Save processed file names with global variables
+// * Global variables to hold processed files
 const completedFiles = new Map();
 
 const bucketName = "cloud-project-partners-14-s3";
 const queueName = "cloud-project-partners-14-sqs";
 
 const pageTitle = "CAB432 Cloud Project Partners 14";
-const fileSize = 2; // * file size limit: 2MB
+const fileSize = 10; // * file size limit: 2MB
 const maxWidth = 1920;
 const maxHeight = 1080;
 
@@ -76,7 +79,7 @@ const createQueue = async (queueName) => {
 
 createQueue(queueName);
 
-// Set up Multer storage configuration
+// * Setup Multer configuration
 const storage = multer.memoryStorage(); // Store the image in memory for processing
 
 // Set up Multer file filter configuration
@@ -96,7 +99,7 @@ const upload = multer({
   limits: { fileSize: fileSize * 1024 * 1024 },
 });
 
-// * load main page template
+// * Handle main page rendering
 const handleHome = (req, res) => {
   res.render("index", {
     pageTitle,
@@ -106,7 +109,7 @@ const handleHome = (req, res) => {
   });
 };
 
-// * convert an image by using sqs queue
+// * Function to handle image conversion
 const handleConvert = async (req, res) => {
   // check if the file is uploaded
   console.log("🟢 req.file:", req.file);
@@ -222,7 +225,7 @@ const handleConvert = async (req, res) => {
   }
 };
 
-// * SQS Queue: process the message: convert image
+// * SQS: Process the message and convert the image
 const processMessage = async (message) => {
   console.log("🟢 SQS message body:", message.Body);
   // get the info from sqs message
@@ -285,6 +288,7 @@ const processMessage = async (message) => {
   }
 };
 
+// * Poll the SQS queue for new messages
 const pollSQSQueue = async () => {
   while (true) {
     const params = {
@@ -310,4 +314,5 @@ pollSQSQueue().catch((error) => {
   console.error("🔴 SQS polling error:", error);
 });
 
+// * Export functions for external use
 module.exports = { upload, handleHome, handleConvert };

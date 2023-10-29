@@ -1,41 +1,48 @@
 <html lang="en">
   <body>
+    <!-- * Main container for the whole page -->
     <div class="container">
+      <!-- * Information section with file requirements -->
       <div class="container info-section">
         <ul>
+          <!-- * List down the file upload requirements -->
           <li>File size limit: {{fileSize}}MB</li>
           <li>Only JPEG, PNG, and GIF are available</li>
-          <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}</li>
+          <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}px</li>
         </ul>
       </div>
+
+      <!-- * Form for uploading and converting image -->
       <form action="/" method="post" enctype="multipart/form-data">
-        <label for="image">
-          Select Image:
-        </label>
+        <label for="image">Select Image:</label>
         <input type="file" name="image" id="image" accept="image/*" />
         <br />
+
+        <!-- * Field for specifying desired image width -->
         <label for="width">Desired Width:</label>
         <input
           type="number"
           name="width"
           id="width"
           required
-          required
           min="1"
           max={{maxWidth}}
         />
         <br />
+
+        <!-- * Field for specifying desired image height -->
         <label for="height">Desired Height:</label>
         <input
           type="number"
           name="height"
           id="height"
           required
-          required
           min="1"
           max={{maxHeight}}
         />
         <br />
+
+        <!-- * Dropdown for selecting desired image format -->
         <label for="format">Desired Format:</label>
         <select name="format" id="format" required>
           <option value="jpeg">JPEG</option>
@@ -43,16 +50,21 @@
           <option value="gif">GIF</option>
         </select>
         <div style="height: 15px;"></div>
+
+        <!-- * Submit button -->
         <button class="btn btn-inverse btn-custom" type="submit">Convert Image</button>
       </form>
+
+      <!-- * Text that appears while image is being processed -->
       <p
         id="processingText"
         style="font-family: 'Poppins'; display: none;"
       >Processing...</p>
-      <div style="height: 15px;"></div>
+
+      <!-- * Result section -->
       {{#if result}}
         <div class="result-container">
-          <!-- download button -->
+          <!-- ! Download button -->
           <a
             href="data:image/jpeg;base64,{{convertedImage}}"
             download={{newFilename}}
@@ -60,15 +72,22 @@
             <button class="btn btn-success btn-custom">Download Image</button>
           </a>
         </div>
+
+        <!-- * Text showing the conversion result -->
         <p id="result-text">{{result}}</p>
+
+        <!-- * Display the converted image -->
         <img
           class="converted-image"
           src="data:image/jpeg;base64,{{convertedImage}}"
           alt="Uploaded Image"
         />
+
         <div style="height: 15px;"></div>
       {{/if}}
     </div>
+
+    <!-- * Link to the external JS script -->
     <script src="javascripts/script.js"></script>
   </body>
 </html>
