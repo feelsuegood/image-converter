@@ -8,8 +8,12 @@
           <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}</li>
         </ul>
       </div>
-
       <form action="/" method="post" enctype="multipart/form-data">
+        <label for="image">
+          Select Image:
+        </label>
+        <input type="file" name="image" id="image" accept="image/*" />
+        <br />
         <label for="width">Desired Width:</label>
         <input
           type="number"
@@ -38,47 +42,32 @@
           <option value="png">PNG</option>
           <option value="gif">GIF</option>
         </select>
-        <br />
-        <label class="btn btn-inverse" for="image">
-          Select Image
-        </label>
-        <input
-          type="file"
-          name="image"
-          id="image"
-          accept="image/*"
-          required
-          style="display: none;"
-        />
         <div style="height: 15px;"></div>
-        <button
-          class="btn btn-inverse"
-          type="submit"
-          style="font-family: 'Poppins';"
-        >Convert Imaage</button>
+        <button class="btn btn-inverse btn-custom" type="submit">Convert Image</button>
       </form>
+      <p
+        id="processingText"
+        style="font-family: 'Poppins'; display: none;"
+      >Processing...</p>
+      <div style="height: 15px;"></div>
       {{#if result}}
-        <p style="font-family: 'Poppins';">{{result}}</p>
-        <!-- Display the converted image -->
+        <div class="result-container">
+          <!-- download button -->
+          <a
+            href="data:image/jpeg;base64,{{convertedImage}}"
+            download={{newFilename}}
+          >
+            <button class="btn btn-success btn-custom">Download Image</button>
+          </a>
+        </div>
         <img
           class="converted-image"
           src="data:image/jpeg;base64,{{convertedImage}}"
           alt="Uploaded Image"
         />
-        <!-- Add a download button -->
-        <div class="result-container">
-          <a
-            href="data:image/jpeg;base64,{{convertedImage}}"
-            download={{newFilename}}
-          >
-            <div style="height: 15px;"></div>
-            <button
-              class="btn btn-inverse"
-              style="font-family: 'Poppins';"
-            >Download Image</button>
-          </a>
-        </div>
+        <div style="height: 15px;"></div>
       {{/if}}
     </div>
+    <script src="javascripts/script.js"></script>
   </body>
 </html>

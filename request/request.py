@@ -1,71 +1,86 @@
+import threading
 import requests
 import time
 import os
 from dotenv import load_dotenv
+from typing import Any
+
 load_dotenv()
 
-# Define the URL
+# Define the URL and other constants
 url = os.getenv('REQUEST_URL')
+RETRIES = 3
+MAX_THREADS = 50
+IMAGE_FILE = 'test-5kb.jpeg'
 
-# Define the number of retries attempts of POST requests
-retries = 3
+# Thread-safe print function
 
+
+def thread_print(*args: Any, **kwargs: Any) -> None:
+    with threading.Lock():
+        print(*args, **kwargs)
 
 # Function to perform a GET request
-def perform_get():
+
+
+def perform_get(thread_number: int) -> None:
     try:
-        response = requests.get(url, timeout=10)  # 10 seconds timeout
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
-            print('🟢 GET Success')
+            thread_print(f'🧵 Thread {thread_number} - 🔹 GET Success')
         else:
-            print(f'🔴 GET Failed: {response.status_code}, {response.text}')
+            thread_print(
+                f'🧵 Thread {thread_number} - 🔴 GET Failed: {response.status_code}')
     except requests.exceptions.RequestException as e:
-        print(f'🔴 GET: An error occurred: {e}')
+        thread_print(
+            f'🧵 Thread {thread_number} - 🔴 GET: An error occurred: {e}')
 
 # Function to perform a POST request
 
 
-def perform_post():
-    form_data = {
-        'width': 1920,
-        'height': 1080,
-        'format': 'PNG'
-    }
-    for i in range(retries):
+def perform_post(thread_number: int) -> None:  # Added thread_number parameter
+    form_data = {'width': 100, 'height': 100, 'format': 'JPEG'}
+    for _ in range(RETRIES):
         try:
-            with open('test-2mb.jpg', 'rb') as f:
-                files = {'image': (
-                    'test-2mb.jpg', f, 'image/jpeg')}
-                start_time = time.time()
+            with open(IMAGE_FILE, 'rb') as f:
+                files = {'image': (IMAGE_FILE, f, 'image/jpeg')}
                 response = requests.post(
-                    url, data=form_data, files=files, timeout=10)
-                end_time = time.time()
-                elapsed_time = end_time - start_time
-
+                    url, data=form_data, files=files, timeout=15)
                 if response.status_code == 200:
-                    print('🟢 POST Success')
-                    print(f'   Elapsed time: {elapsed_time:.2f} seconds')
-                else:
-                    print(
-                        f'🔴 POST Failed: {response.status_code}, {response.text}')
-                break  # if successful, break the loop
-        except requests.exceptions.RequestException as e:
-            print(f'🔴 POST: An error occurred: {e}')
+                    thread_print(f'🧵 Thread {thread_number} - 🟢 POST Success')
+                    return
+                thread_print(
+                    f'🧵 Thread {thread_number} - 🔴 POST Failed: {response.status_code}')
+        except (requests.exceptions.RequestException, FileNotFoundError) as e:
+            thread_print(
+                f'🧵 Thread {thread_number} - 🔴 POST: An error occurred: {e}')
             time.sleep(2)
 
 # Main function to perform alternating GET and POST requests
 
 
-def main(num_iterations, delay):
+def main(thread_number: int, num_iterations: int, delay: int) -> None:
     for i in range(num_iterations):
-        print(f"➡️  Iteration {i+1}/{num_iterations}")
-        perform_get()
-        # Add delay before the next request
+        thread_print(
+            f"🧵 Thread {thread_number} - ➡️  Iteration {i+1}/{num_iterations}")
+        perform_get(thread_number)
         time.sleep(delay)
-        perform_post()
-        # Add delay before the next request
+        perform_post(thread_number)
         time.sleep(delay)
+
+# Function to perform multiple requests in parallel
+
+
+def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, delay: int) -> None:
+    threads = []
+    for i in range(min(MAX_THREADS, num_threads)):  # Limit the number of threads
+        thread = threading.Thread(target=main, args=(
+            i+1, num_iterations_per_thread, delay))
+        threads.append(thread)
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
 if __name__ == "__main__":
-    main(100000, 2)
+    perform_multiple_requests(1, 1000, 3)

@@ -1,4 +1,3 @@
-// Required modules for the project
 const dotenv = require("dotenv");
 const multer = require("multer");
 const path = require("path");
@@ -7,22 +6,22 @@ const sharp = require("sharp");
 const AWS = require("aws-sdk");
 const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
-const { uploadToS3 } = require("../utils/s3Utils");
-const { sendMessageToSQS } = require("../utils/sqsUtils");
 
 dotenv.config();
 
-// AWS S3 and SQS instances
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
-// Constants for bucket and queue names
-const bucketName = "cloud-project-partners-14-s3";
-const queueName = "cloud-project-partners-14-sqs";
 const pageTitle = "CAB432 Cloud Project Partners 14";
-const fileSize = 2; // * file size limit: 5MB
+const fileSize = 2; // * file size limit: 2MB
 const maxWidth = 1920;
 const maxHeight = 1080;
+
+// * Save processed file names with global variables
+const completedFiles = new Map();
+
+const bucketName = "cloud-project-partners-14-s3";
+const queueName = "cloud-project-partners-14-sqs";
 
 // * Create the S3 bucket
 async function createS3bucket() {
@@ -37,7 +36,6 @@ async function createS3bucket() {
     }
   }
 }
-
 (async () => {
   await createS3bucket();
 })();
@@ -125,12 +123,20 @@ const handleConvert = async (req, res) => {
   const newFilename = uuidv4() + "." + desiredFormat;
 
   // upload an original image file to s3
-  await uploadToS3(
-    bucketName,
-    newFilename,
-    imageBuffer,
-    `image/${desiredFormat}`
-  );
+  try {
+    await s3
+      .upload({
+        Bucket: bucketName,
+        Key: newFilename,
+        Body: imageBuffer,
+        ContentType: `image/${desiredFormat}`,
+      })
+      .promise();
+    console.log("🟢 uploaded successfully");
+  } catch (error) {
+    console.error("🔴 S3 upload error:", error);
+    return res.status(500).send("Failed to upload to S3");
+  }
 
   // Create a message to send to the SQS queue with relevant information
   const messageParams = {
@@ -145,12 +151,11 @@ const handleConvert = async (req, res) => {
   };
   console.log("🟢 messageParams:", messageParams);
 
-  await sendMessageToSQS(
-    process.env.AWS_SQS_URL,
-    JSON.stringify(messageParams)
-  );
-
   try {
+    // Send the message to the SQS queue
+    console.log("🟢 Sending message to queue...");
+    await sqs.sendMessage(messageParams).promise();
+
     // Wait for the SQS job to complete
     console.log("🟢 Waiting for message from queue...");
     const { Messages } = await sqs
@@ -163,21 +168,31 @@ const handleConvert = async (req, res) => {
 
     if (Messages && Messages.length > 0) {
       console.log("🟢 Message received. Processing...");
+      await processMessage(Messages[0]);
     } else {
-      // Retrieve the uploaded image from S3
-      const retrievedImage = await s3
-        .getObject({
-          Bucket: bucketName,
-          Key: newFilename,
-        })
-        .promise();
+      // Since the image processing operation is finished, import the image back from S3.
+      // Check the status of file processing
+      if (completedFiles.has(newFilename)) {
+        const retrievedImage = await s3
+          .getObject({
+            Bucket: bucketName,
+            Key: newFilename,
+          })
+          .promise();
 
-      const imageBase64 = retrievedImage.Body.toString("base64");
+        // Apply sharp operations
+        const enhancedImageBuffer = await sharp(retrievedImage.Body)
+          .sharpen()
+          .gamma()
+          .normalise()
+          .toBuffer();
+        const imageBase64 = enhancedImageBuffer.toString("base64");
+      }
 
       // Render the result
       res.render("index", {
         pageTitle,
-        result: `File uploaded to S3. A converted file name is ${newFilename}. Dimension is ${desiredWidth}x${desiredHeight}.`,
+        result: `A converted file name is ${newFilename}. Dimension is ${desiredWidth}x${desiredHeight}.`,
         newFilename,
         convertedImage: imageBase64, // Pass the image data to the view
         originalFilename,
@@ -188,7 +203,7 @@ const handleConvert = async (req, res) => {
     }
   } catch (error) {
     console.error(`🔴 Error: ${error.message}`);
-    res.status(500).render("index", {
+    res.render("index", {
       pageTitle,
       result: `Error uploading to S3: ${error.message}`,
     });

@@ -1,21 +1,22 @@
 const dotenv = require("dotenv");
 const AWS = require("aws-sdk");
 const sharp = require("sharp");
-const { uploadToS3 } = require("../utils/s3Utils");
 
 dotenv.config();
 
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
+// * Save processed file names with global variables
+const completedFiles = new Map();
+
+// * process the message: convert image
 const processMessage = async (message) => {
   console.log("🟢 SQS message body:", message.Body);
-
   // get the info from sqs message
-  const messageParams = JSON.parse(JSON.parse(message.Body).MessageBody);
-  const { filename, width, height, format, bucketName } = messageParams;
-  console.log("Parsed SQS message:", JSON.parse(message.Body));
-  console.log("Message Parameters:", messageParams);
+  const { filename, width, height, format, bucketName } = JSON.parse(
+    message.Body
+  );
 
   // get the original image from s3
   const params = {
@@ -27,8 +28,6 @@ const processMessage = async (message) => {
   console.log("🟢 S3 getObject Params:", params);
 
   try {
-    console.log(`🟢 Bucket: ${bucketName}, Filename: ${filename}`);
-
     const getObjectResponse = await s3.getObject(params).promise();
 
     // Check for empty or null response
@@ -40,15 +39,24 @@ const processMessage = async (message) => {
 
     // Perform image converting
     const processedBuffer = await sharp(imageBuffer)
-      .resize(width, height)
-      .toFormat(format) // Change the format here, e.g., "png" or "webp"
+      .resize(width, height) // change the size
+      .toFormat(format) // Change the format
       .toBuffer();
 
     // Upload the converted image to S3
-    await uploadToS3(bucketName, filename, processedBuffer, `image/${format}`);
+    await s3
+      .upload({
+        Bucket: bucketName,
+        Key: filename,
+        Body: processedBuffer,
+        ContentType: `image/${format}`,
+      })
+      .promise();
 
-    // Delete the processed message from the SQS queue
+    // Add processed file names to Map
+    completedFiles.set(filename, true);
     try {
+      // Delete the processed message from the SQS queue
       await sqs
         .deleteMessage({
           QueueUrl: process.env.AWS_SQS_URL,
@@ -75,6 +83,7 @@ const pollSQSQueue = async () => {
 
     try {
       const { Messages } = await sqs.receiveMessage(params).promise();
+
       if (Messages && Messages.length > 0) {
         await processMessage(Messages[0]);
       }
