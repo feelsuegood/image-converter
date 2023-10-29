@@ -84,4 +84,4 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 if __name__ == "__main__":
     # 1 thread, 100 iterations, 5 second delay
-    perform_multiple_requests(4, 1000, 5)
+    perform_multiple_requests(5, 1000, 5)

@@ -22,9 +22,9 @@ const bucketName = "cloud-project-partners-14-s3";
 const queueName = "cloud-project-partners-14-sqs";
 
 const pageTitle = "CAB432 Cloud Project Partners 14";
-const fileSize = 10; // * file size limit: 2MB
-const maxWidth = 1920;
-const maxHeight = 1080;
+const fileSize = 2; // * file size limit: 2MB
+const maxWidth = 800;
+const maxHeight = 800;
 
 // * Create the S3 bucket
 async function createS3bucket() {
@@ -43,7 +43,7 @@ async function createS3bucket() {
   await createS3bucket();
 })();
 
-// * create SQS queue
+// * Create SQS queue
 const createQueue = async (queueName) => {
   const params = {
     QueueName: queueName,
@@ -84,9 +84,9 @@ const storage = multer.memoryStorage(); // Store the image in memory for process
 
 // Set up Multer file filter configuration
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  const allowedTypes = ["image/jpeg", "image/gif", "image/webp"];
   if (!allowedTypes.includes(file.mimetype)) {
-    cb(new Error("Only JPEG, PNG, and GIF types are allowed!"), false);
+    cb(new Error("Only JPEG, GIF, and WEBP types are allowed!"), false);
   } else {
     cb(null, true);
   }
@@ -188,7 +188,7 @@ const handleConvert = async (req, res) => {
         const enhancedImageBuffer = await sharp(retrievedImage.Body)
           .blur(10) // Applies a blur filter to the image
           .sharpen() // Applies a sharpening filter to the image
-          .normalise() // Normalizes the image's channel values
+          .normalize() // Normalizes the image's channel values
           .rotate(90) // Rotates the image 90 degrees
           .flip() // Flips the image vertically
           .flop() // Flips the image horizontally
@@ -294,7 +294,7 @@ const pollSQSQueue = async () => {
     const params = {
       QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
       MaxNumberOfMessages: 1,
-      WaitTimeSeconds: 20, // Adjust as needed
+      WaitTimeSeconds: 20,
     };
 
     try {
