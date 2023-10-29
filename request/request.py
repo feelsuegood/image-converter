@@ -9,9 +9,9 @@ load_dotenv()
 
 # Define the URL and other constants
 url = os.getenv('REQUEST_URL')
-RETRIES = 3
+RETRIES = 1
 MAX_THREADS = 100
-IMAGE_FILE = 'test-2mb.jpg'
+IMAGE_FILE = 'test-3mb.jpg'
 
 # Thread-safe print function
 
@@ -39,7 +39,7 @@ def perform_get(thread_number: int) -> None:
 
 
 def perform_post(thread_number: int) -> None:  # Added thread_number parameter
-    form_data = {'width': 100, 'height': 100, 'format': 'JPEG'}
+    form_data = {'width': 1920, 'height': 1080, 'format': 'PNG'}
     for _ in range(RETRIES):
         try:
             with open(IMAGE_FILE, 'rb') as f:
@@ -83,4 +83,5 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 
 if __name__ == "__main__":
-    perform_multiple_requests(1, 100, 5)
+    # 1 thread, 100 iterations, 5 second delay
+    perform_multiple_requests(4, 1000, 5)
