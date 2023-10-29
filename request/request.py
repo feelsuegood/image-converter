@@ -10,7 +10,7 @@ load_dotenv()
 # Define the URL and other constants
 url = os.getenv('REQUEST_URL')
 RETRIES = 3
-MAX_THREADS = 50
+MAX_THREADS = 5
 IMAGE_FILE = 'test-5kb.jpeg'
 
 # Thread-safe print function

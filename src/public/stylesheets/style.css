@@ -97,3 +97,12 @@ label {
     transform: scale(1);
   }
 }
+
+#result-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a4a4a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
