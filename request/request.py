@@ -33,7 +33,7 @@ def perform_get(thread_number: int) -> None:
                 f'🧵 Thread {thread_number} - 🔴 GET Failed: {response.status_code}')
     except requests.exceptions.RequestException as e:
         thread_print(
-            f'🧵 Thread {thread_number} - 🔴 GET: An error occurred: {e}')
+            f'🧵 Thread {thread_number} - 🟡 GET: An error occurred: {e}')
 
 # Function to perform a POST request
 
@@ -53,7 +53,7 @@ def perform_post(thread_number: int) -> None:  # Added thread_number parameter
                     f'🧵 Thread {thread_number} - 🔴 POST Failed: {response.status_code}')
         except (requests.exceptions.RequestException, FileNotFoundError) as e:
             thread_print(
-                f'🧵 Thread {thread_number} - 🔴 POST: An error occurred: {e}')
+                f'🧵 Thread {thread_number} - 🟡 POST: An error occurred: {e}')
             time.sleep(2)
 
 # Main function to perform alternating GET and POST requests
@@ -84,4 +84,4 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 if __name__ == "__main__":
     # 1 thread, 100 iterations, 5 second delay
-    perform_multiple_requests(2, 1000, 5)
+    perform_multiple_requests(40, 1000, 5)

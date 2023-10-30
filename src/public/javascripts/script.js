@@ -22,3 +22,9 @@ document.addEventListener("DOMContentLoaded", function () {
     processingText.style.display = "block";
   });
 });
+
+// Attach click event to 'goBackButton'
+document.getElementById("goBackButton").addEventListener("click", function () {
+  // Navigate back to the previous page
+  window.history.back();
+});

@@ -218,7 +218,7 @@ const handleConvert = async (req, res) => {
     }
   } catch (error) {
     console.error(`🔴 Error: ${error.message}`);
-    res.render("index", {
+    res.render("error", {
       pageTitle,
       result: `Error uploading to S3: ${error.message}`,
     });
