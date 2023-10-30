@@ -50,7 +50,11 @@
     <div style="height: 15px;"></div>
 
     <!-- * Submit button -->
-    <button class="btn btn-inverse btn-custom" type="submit">Convert Image</button>
+    <button
+      class="btn btn-inverse btn-custom"
+      id="submitButton"
+      type="submit"
+    >Convert Image</button>
     <p></p>
 
     <!-- * Cancel button -->
@@ -59,6 +63,7 @@
 
   <!-- * Text that appears while image is being processed -->
   <p
+    class="notification"
     id="processingText"
     style="font-family: 'Poppins'; display: none;"
   >Processing...</p>

@@ -68,7 +68,7 @@ label {
   height: auto;
 }
 
-#processingText {
+.notification {
   width: 150px;
   font-family: "Poppins", sans-serif;
   display: none;
