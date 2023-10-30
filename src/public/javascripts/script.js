@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Display "Processing..." text when the form is submitted
     processingText.style.display = "block";
-
+    form.submit();
     // Start the timeout
     timeout = setTimeout(function () {
       // Check if the form has been successfully submitted
