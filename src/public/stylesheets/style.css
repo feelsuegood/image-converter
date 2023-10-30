@@ -14,6 +14,14 @@ select {
   height: 30px; /* Adjust as needed */
   width: px;
 }
+.navbar-custom {
+  height: 70px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1030;
+}
 
 .info-section {
   background-color: #f9f9f9;

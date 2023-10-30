@@ -1,0 +1,33 @@
+<!-- * Main container for the whole page -->
+<div class="container">
+  <div class="result-container">
+
+    <!-- * Text showing the conversion result -->
+    <div class="container info-section">
+      <ul>
+        <!-- * List down the file upload requirements -->
+        <li>A converted file name is {{resultFilename}}</li>
+        <li>Dimensions is {{resultDimensions}}</li>
+      </ul>
+    </div>
+
+    <!-- ! Download button -->
+    <a
+      href="data:image/jpeg;base64,{{convertedImage}}"
+      download={{resultFilename}}
+    >
+      <button class="btn btn-success btn-custom">Download Image</button>
+    </a><p></p>
+
+    <!-- Go Home Button -->
+    <a href="/">
+      <button class="btn btn-inverse btn-custom">Go Home</button></a>
+  </div>
+
+  <!-- * Display the converted image -->
+  <img
+    class="converted-image"
+    src="data:image/jpeg;base64,{{convertedImage}}"
+    alt="Uploaded Image"
+  />
+</div>
