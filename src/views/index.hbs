@@ -1,74 +1,87 @@
-<html lang="en">
-  <body>
-    <div class="container">
-      <div class="container info-section">
-        <ul>
-          <li>File size limit: {{fileSize}}MB</li>
-          <li>Only JPEG, PNG, and GIF are available</li>
-          <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}</li>
-        </ul>
-      </div>
-      <form action="/" method="post" enctype="multipart/form-data">
-        <label for="image">
-          Select Image:
-        </label>
-        <input type="file" name="image" id="image" accept="image/*" />
-        <br />
-        <label for="width">Desired Width:</label>
-        <input
-          type="number"
-          name="width"
-          id="width"
-          required
-          required
-          min="1"
-          max={{maxWidth}}
-        />
-        <br />
-        <label for="height">Desired Height:</label>
-        <input
-          type="number"
-          name="height"
-          id="height"
-          required
-          required
-          min="1"
-          max={{maxHeight}}
-        />
-        <br />
-        <label for="format">Desired Format:</label>
-        <select name="format" id="format" required>
-          <option value="jpeg">JPEG</option>
-          <option value="png">PNG</option>
-          <option value="gif">GIF</option>
-        </select>
-        <div style="height: 15px;"></div>
-        <button class="btn btn-inverse btn-custom" type="submit">Convert Image</button>
-      </form>
-      <p
-        id="processingText"
-        style="font-family: 'Poppins'; display: none;"
-      >Processing...</p>
-      <div style="height: 15px;"></div>
-      {{#if result}}
-        <div class="result-container">
-          <!-- download button -->
-          <a
-            href="data:image/jpeg;base64,{{convertedImage}}"
-            download={{newFilename}}
-          >
-            <button class="btn btn-success btn-custom">Download Image</button>
-          </a>
-        </div>
-        <p id="result-text">{{result}}</p>
-        <img
-          class="converted-image"
-          src="data:image/jpeg;base64,{{convertedImage}}"
-          alt="Uploaded Image"
-        />
-        <div style="height: 15px;"></div>
-      {{/if}}
+<!-- * Main container for the whole page -->
+<div class="container">
+  <!-- * Information section with file requirements -->
+  <div class="container info-section">
+    <ul>
+      <!-- * List down the file upload requirements -->
+      <li>File size limit: {{fileSize}}MB</li>
+      <li>Only JPEG, GIF, and WEBP are available</li>
+      <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}px</li>
+    </ul>
+  </div>
+
+  <!-- * Form for uploading and converting image -->
+  <form action="/" method="post" enctype="multipart/form-data">
+    <label for="image">Select Image:</label>
+    <input type="file" name="image" id="image" accept="image/*" />
+    <br />
+
+    <!-- * Field for specifying desired image width -->
+    <label for="width">Desired Width:</label>
+    <input
+      type="number"
+      name="width"
+      id="width"
+      required
+      min="1"
+      max={{maxWidth}}
+    />
+    <br />
+
+    <!-- * Field for specifying desired image height -->
+    <label for="height">Desired Height:</label>
+    <input
+      type="number"
+      name="height"
+      id="height"
+      required
+      min="1"
+      max={{maxHeight}}
+    />
+    <br />
+
+    <!-- * Dropdown for selecting desired image format -->
+    <label for="format">Desired Format:</label>
+    <select name="format" id="format" required>
+      <option value="jpeg">JPEG</option>
+      <option value="gif">GIF</option>
+      <option value="webp">WEBP</option>
+    </select>
+    <div style="height: 15px;"></div>
+
+    <!-- * Submit button -->
+    <button class="btn btn-inverse btn-custom" type="submit">Convert Image</button>
+  </form>
+
+  <!-- * Text that appears while image is being processed -->
+  <p
+    id="processingText"
+    style="font-family: 'Poppins'; display: none;"
+  >Processing...</p>
+  <br />
+
+  <!-- * Result section -->
+  {{#if result}}
+    <div class="result-container">
+      <!-- ! Download button -->
+      <a
+        href="data:image/jpeg;base64,{{convertedImage}}"
+        download={{newFilename}}
+      >
+        <button class="btn btn-success btn-custom">Download Image</button>
+      </a>
     </div>
-    <script src="javascripts/script.js"></script>
-  </body>
-</html>
+
+    <!-- * Text showing the conversion result -->
+    <p id="result-text">{{result}}</p>
+
+    <!-- * Display the converted image -->
+    <img
+      class="converted-image"
+      src="data:image/jpeg;base64,{{convertedImage}}"
+      alt="Uploaded Image"
+    />
+
+    <div style="height: 15px;"></div>
+  {{/if}}
+</div>

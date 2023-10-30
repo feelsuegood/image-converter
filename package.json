@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "web": "nodemon -L ./src/bin/www",
-    "sqs": "nodemon -L ./src/workers/sqsWorker.js",
-    "start": "concurrently \"npm run web\" \"npm run sqs\""
+    "start": "nodemon -L ./src/bin/www"
   },
   "dependencies": {
     "aws-sdk": "^2.1480.0",

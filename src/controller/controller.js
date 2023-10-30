@@ -1,18 +1,21 @@
+// * Import necessary modules
 const dotenv = require("dotenv");
 dotenv.config();
 
+// * Load AWS SDK and other modules
+const AWS = require("aws-sdk");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
-const AWS = require("aws-sdk");
 const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
 
+// * Initialize AWS services
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
-// * Save processed file names with global variables
+// * Global variables to hold processed files
 const completedFiles = new Map();
 
 const bucketName = "cloud-project-partners-14-s3";
@@ -20,8 +23,8 @@ const queueName = "cloud-project-partners-14-sqs";
 
 const pageTitle = "CAB432 Cloud Project Partners 14";
 const fileSize = 2; // * file size limit: 2MB
-const maxWidth = 1920;
-const maxHeight = 1080;
+const maxWidth = 800;
+const maxHeight = 800;
 
 // * Create the S3 bucket
 async function createS3bucket() {
@@ -40,7 +43,7 @@ async function createS3bucket() {
   await createS3bucket();
 })();
 
-// * create SQS queue
+// * Create SQS queue
 const createQueue = async (queueName) => {
   const params = {
     QueueName: queueName,
@@ -76,14 +79,14 @@ const createQueue = async (queueName) => {
 
 createQueue(queueName);
 
-// Set up Multer storage configuration
+// * Setup Multer configuration
 const storage = multer.memoryStorage(); // Store the image in memory for processing
 
 // Set up Multer file filter configuration
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  const allowedTypes = ["image/jpeg", "image/gif", "image/webp"];
   if (!allowedTypes.includes(file.mimetype)) {
-    cb(new Error("Only JPEG, PNG, and GIF types are allowed!"), false);
+    cb(new Error("Only JPEG, GIF, and WEBP types are allowed!"), false);
   } else {
     cb(null, true);
   }
@@ -96,7 +99,7 @@ const upload = multer({
   limits: { fileSize: fileSize * 1024 * 1024 },
 });
 
-// * load main page template
+// * Handle main page rendering
 const handleHome = (req, res) => {
   res.render("index", {
     pageTitle,
@@ -106,7 +109,7 @@ const handleHome = (req, res) => {
   });
 };
 
-// * convert an image by using sqs queue
+// * Function to handle image conversion
 const handleConvert = async (req, res) => {
   // check if the file is uploaded
   console.log("🟢 req.file:", req.file);
@@ -185,7 +188,7 @@ const handleConvert = async (req, res) => {
         const enhancedImageBuffer = await sharp(retrievedImage.Body)
           .blur(10) // Applies a blur filter to the image
           .sharpen() // Applies a sharpening filter to the image
-          .normalise() // Normalizes the image's channel values
+          .normalize() // Normalizes the image's channel values
           .rotate(90) // Rotates the image 90 degrees
           .flip() // Flips the image vertically
           .flop() // Flips the image horizontally
@@ -215,14 +218,14 @@ const handleConvert = async (req, res) => {
     }
   } catch (error) {
     console.error(`🔴 Error: ${error.message}`);
-    res.render("index", {
+    res.render("error", {
       pageTitle,
       result: `Error uploading to S3: ${error.message}`,
     });
   }
 };
 
-// * SQS Queue: process the message: convert image
+// * SQS: Process the message and convert the image
 const processMessage = async (message) => {
   console.log("🟢 SQS message body:", message.Body);
   // get the info from sqs message
@@ -285,12 +288,13 @@ const processMessage = async (message) => {
   }
 };
 
+// * Poll the SQS queue for new messages
 const pollSQSQueue = async () => {
   while (true) {
     const params = {
       QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
       MaxNumberOfMessages: 1,
-      WaitTimeSeconds: 20, // Adjust as needed
+      WaitTimeSeconds: 20,
     };
 
     try {
@@ -310,4 +314,5 @@ pollSQSQueue().catch((error) => {
   console.error("🔴 SQS polling error:", error);
 });
 
+// * Export functions for external use
 module.exports = { upload, handleHome, handleConvert };

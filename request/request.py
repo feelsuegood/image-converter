@@ -10,8 +10,8 @@ load_dotenv()
 # Define the URL and other constants
 url = os.getenv('REQUEST_URL')
 RETRIES = 3
-MAX_THREADS = 5
-IMAGE_FILE = 'test-5kb.jpeg'
+MAX_THREADS = 100
+IMAGE_FILE = 'test-2mb.jpg'
 
 # Thread-safe print function
 
@@ -33,19 +33,19 @@ def perform_get(thread_number: int) -> None:
                 f'🧵 Thread {thread_number} - 🔴 GET Failed: {response.status_code}')
     except requests.exceptions.RequestException as e:
         thread_print(
-            f'🧵 Thread {thread_number} - 🔴 GET: An error occurred: {e}')
+            f'🧵 Thread {thread_number} - 🟡 GET: An error occurred: {e}')
 
 # Function to perform a POST request
 
 
 def perform_post(thread_number: int) -> None:  # Added thread_number parameter
-    form_data = {'width': 100, 'height': 100, 'format': 'JPEG'}
+    form_data = {'width': 800, 'height': 800, 'format': 'JPEG'}
     for _ in range(RETRIES):
         try:
             with open(IMAGE_FILE, 'rb') as f:
                 files = {'image': (IMAGE_FILE, f, 'image/jpeg')}
                 response = requests.post(
-                    url, data=form_data, files=files, timeout=15)
+                    url, data=form_data, files=files, timeout=10)
                 if response.status_code == 200:
                     thread_print(f'🧵 Thread {thread_number} - 🟢 POST Success')
                     return
@@ -53,7 +53,7 @@ def perform_post(thread_number: int) -> None:  # Added thread_number parameter
                     f'🧵 Thread {thread_number} - 🔴 POST Failed: {response.status_code}')
         except (requests.exceptions.RequestException, FileNotFoundError) as e:
             thread_print(
-                f'🧵 Thread {thread_number} - 🔴 POST: An error occurred: {e}')
+                f'🧵 Thread {thread_number} - 🟡 POST: An error occurred: {e}')
             time.sleep(2)
 
 # Main function to perform alternating GET and POST requests
@@ -83,4 +83,5 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 
 if __name__ == "__main__":
-    perform_multiple_requests(1, 1000, 3)
+    # 1 thread, 100 iterations, 5 second delay
+    perform_multiple_requests(40, 1000, 5)
