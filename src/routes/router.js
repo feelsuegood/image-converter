@@ -8,6 +8,7 @@ const {
 
 /* GET home page. */
 /* POST upload and convrt image */
-Router.route("/").get(handleHome).post(upload.single("image"), handleConvert);
+Router.get("/", handleHome);
+Router.post("/result", upload.single("image"), handleConvert);
 
 module.exports = Router;

@@ -18,71 +18,68 @@ const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 // * Global variables to hold processed files
 const completedFiles = new Map();
 
-const bucketName = "cloud-project-partners-14-s3";
-const queueName = "cloud-project-partners-14-sqs";
+const bucketName = process.env.AWS_S3_BUCKET_NAME;
+const queueName = process.env.AWS_SQS_QUEUE_NAME;
+const pageTitle = "Image Converter";
+const fileSize = 10; // * file size limit: 10MB
+const maxWidth = 1920;
+const maxHeight = 1080;
 
-const pageTitle = "CAB432 Cloud Project Partners 14";
-const fileSize = 2; // * file size limit: 2MB
-const maxWidth = 800;
-const maxHeight = 800;
+// * Create the S3 bucket - complete
+// ? should delete this? - we can show that we created this with codes
+// async function createS3bucket() {
+//   try {
+//     await s3.createBucket({ Bucket: bucketName }).promise();
+//     console.log(`🟢 Created bucket: ${bucketName}`);
+//   } catch (err) {
+//     if (err.statusCode === 409) {
+//       console.log(`🟡 Bucket already exists: ${bucketName}`);
+//     } else {
+//       console.log(`🔴 Error creating bucket: ${err}`);
+//     }
+//   }
+// }
+// (async () => {
+//   await createS3bucket();
+// })();
 
-// * Create the S3 bucket
-async function createS3bucket() {
-  try {
-    await s3.createBucket({ Bucket: bucketName }).promise();
-    console.log(`🟢 Created bucket: ${bucketName}`);
-  } catch (err) {
-    if (err.statusCode === 409) {
-      console.log(`🟡 Bucket already exists: ${bucketName}`);
-    } else {
-      console.log(`🔴 Error creating bucket: ${err}`);
-    }
-  }
-}
-(async () => {
-  await createS3bucket();
-})();
+// * Create SQS queue - complete
+// ? should delete this? - we can show that we created this with codes
+// const createQueue = async (queueName) => {
+//   const params = {
+//     QueueName: queueName,
+//   };
 
-// * Create SQS queue
-const createQueue = async (queueName) => {
-  const params = {
-    QueueName: queueName,
-  };
+//   // List existing queues to check for duplicates
+//   try {
+//     const listQueuesResponse = await sqs.listQueues().promise();
+//     const existingQueues = listQueuesResponse.QueueUrls || [];
 
-  // List existing queues to check for duplicates
-  try {
-    const listQueuesResponse = await sqs.listQueues().promise();
-    const existingQueues = listQueuesResponse.QueueUrls || [];
+//     // Check if queue with the same name already exists
+//     const duplicateQueue = existingQueues.find((url) =>
+//       url.endsWith(`/${queueName}`)
+//     );
+//     if (duplicateQueue) {
+//       console.log(
+//         `🟡 Queue with name ${queueName} already exists at URL: ${duplicateQueue}`
+//       );
+//       return;
+//     }
+//   } catch (error) {
+//     console.error("🔴 Error listing queues:", error);
+//   }
 
-    // Check if queue with the same name already exists
-    const duplicateQueue = existingQueues.find((url) =>
-      url.endsWith(`/${queueName}`)
-    );
-    if (duplicateQueue) {
-      console.log(
-        `🟡 Queue with name ${queueName} already exists at URL: ${duplicateQueue}`
-      );
-      return;
-    }
-  } catch (error) {
-    console.error("🔴 Error listing queues:", error);
-  }
+//   // Create the new queue if no duplicate found
+//   try {
+//     const result = await sqs.createQueue(params).promise();
+//     console.log(`🟢 Queue URL: ${result.QueueUrl}`);
+//   } catch (error) {
+//     console.error("🔴 Error creating queue:", error);
+//   }
+// };
+// createQueue(queueName);
 
-  // Create the new queue if no duplicate found
-  try {
-    const result = await sqs.createQueue(params).promise();
-    console.log(`🟢 Queue URL: ${result.QueueUrl}`);
-  } catch (error) {
-    console.error("🔴 Error creating queue:", error);
-  }
-};
-
-createQueue(queueName);
-
-// * Setup Multer configuration
-const storage = multer.memoryStorage(); // Store the image in memory for processing
-
-// Set up Multer file filter configuration
+// * Set up Multer file filter configuration
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ["image/jpeg", "image/gif", "image/webp"];
   if (!allowedTypes.includes(file.mimetype)) {
@@ -92,9 +89,18 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Set up Multer upload configuration
+// * Setup Multer with S3 configuration
 const upload = multer({
-  storage: storage,
+  storage: multerS3({
+    s3: s3,
+    bucket: bucketName,
+    metadata: function (req, file, cb) {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: function (req, file, cb) {
+      cb(null, uuidv4() + path.extname(file.originalname));
+    },
+  }),
   fileFilter: fileFilter,
   limits: { fileSize: fileSize * 1024 * 1024 },
 });
@@ -111,48 +117,24 @@ const handleHome = (req, res) => {
 
 // * Function to handle image conversion
 const handleConvert = async (req, res) => {
-  // check if the file is uploaded
-  console.log("🟢 req.file:", req.file);
-  console.log("🟢 req.body:", req.body);
-
   // Get the desired image width and height from the user
   const desiredWidth = parseInt(req.body.width, 10);
   const desiredHeight = parseInt(req.body.height, 10);
   const desiredFormat = req.body.format.toLowerCase();
-  const imageBuffer = req.file.buffer;
-  const originalFilename = req.file.originalname;
+  const originalFilename = req.file.key;
+  const newFilename = req.file.key.split(".")[0] + "." + desiredFormat; // S3 Object Key
 
-  // Generate a unique filename
-  const newFilename = uuidv4() + "." + desiredFormat;
-
-  // upload an original image file to s3
-  try {
-    await s3
-      .upload({
-        Bucket: bucketName,
-        Key: newFilename,
-        Body: imageBuffer,
-        ContentType: `image/${desiredFormat}`,
-      })
-      .promise();
-    console.log("🟢 uploaded successfully");
-  } catch (error) {
-    console.error("🔴 S3 upload error:", error);
-    return res.status(500).send("Failed to upload to S3");
-  }
-
-  // Create a message to send to the SQS queue with relevant information
+  // * Create a message to send to the SQS queue with relevant information
   const messageParams = {
     QueueUrl: process.env.AWS_SQS_URL, // Replace with your actual SQS queue URL
     MessageBody: JSON.stringify({
-      filename: newFilename,
+      filename: originalFilename,
       width: desiredWidth,
       height: desiredHeight,
       format: desiredFormat,
       bucketName: bucketName,
     }),
   };
-  console.log("🟢 messageParams:", messageParams);
 
   try {
     // Send the message to the SQS queue
@@ -164,14 +146,17 @@ const handleConvert = async (req, res) => {
     const { Messages } = await sqs
       .receiveMessage({
         QueueUrl: process.env.AWS_SQS_URL,
-        MaxNumberOfMessages: 1,
+        MaxNumberOfMessages: 10,
         WaitTimeSeconds: 5,
       })
       .promise();
-
     if (Messages && Messages.length > 0) {
-      console.log("🟢 Message received. Processing...");
-      await processMessage(Messages[0]);
+      // Process multiple messages in parallel
+      await Promise.all(
+        Messages.map(async (message) => {
+          await processMessage(message); // Process each message
+        })
+      );
     } else {
       // connect image and sqs message
       if (completedFiles.has(newFilename)) {
@@ -184,35 +169,13 @@ const handleConvert = async (req, res) => {
           .promise();
         const imageBase64 = retrievedImage.Body.toString("base64");
 
-        // Apply sharp operations to raise CPU utilisation
-        const enhancedImageBuffer = await sharp(retrievedImage.Body)
-          .blur(10) // Applies a blur filter to the image
-          .sharpen() // Applies a sharpening filter to the image
-          .normalize() // Normalizes the image's channel values
-          .rotate(90) // Rotates the image 90 degrees
-          .flip() // Flips the image vertically
-          .flop() // Flips the image horizontally
-          .resize({
-            // Resizes the image to higher dimensions
-            width: 2000,
-            height: 2000,
-            withoutEnlargement: false, // Allows the image to be enlarged
-          })
-          .jpeg({
-            quality: 100, // Sets the quality of the image to 100%
-          })
-          .toBuffer(); // Converts the processed image to a Buffer object
-
         // Render the result
-        res.render("index", {
+        res.render("result", {
           pageTitle,
-          result: `A converted file name is ${newFilename}. Dimension is ${desiredWidth}x${desiredHeight}.`,
-          newFilename,
+          resultFilename: newFilename,
+          resultDimensions: `${desiredWidth}x${desiredHeight}`,
           convertedImage: imageBase64, // Pass the image data to the view
-          originalFilename,
           fileSize,
-          maxWidth,
-          maxHeight,
         });
       }
     }
@@ -227,6 +190,7 @@ const handleConvert = async (req, res) => {
 
 // * SQS: Process the message and convert the image
 const processMessage = async (message) => {
+  // ! Pay attention to processing speed
   console.log("🟢 SQS message body:", message.Body);
   // get the info from sqs message
   const { filename, width, height, format, bucketName } = JSON.parse(
@@ -239,8 +203,7 @@ const processMessage = async (message) => {
     Key: filename,
   };
 
-  //*
-  console.log("🟢 S3 getObject Params:", params);
+  console.log("🟢 original image S3 getObject Params:", params);
 
   try {
     const getObjectResponse = await s3.getObject(params).promise();
@@ -258,18 +221,20 @@ const processMessage = async (message) => {
       .toFormat(format) // Change the format
       .toBuffer();
 
+    const newFilename = filename.split(".")[0] + "." + format;
+
     // Upload the converted image to S3
     await s3
       .upload({
         Bucket: bucketName,
-        Key: filename,
+        Key: newFilename,
         Body: processedBuffer,
         ContentType: `image/${format}`,
       })
       .promise();
 
     // Add processed file names to Map
-    completedFiles.set(filename, true);
+    completedFiles.set(newFilename, true);
     try {
       // Delete the processed message from the SQS queue
       await sqs
@@ -293,15 +258,20 @@ const pollSQSQueue = async () => {
   while (true) {
     const params = {
       QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
-      MaxNumberOfMessages: 1,
-      WaitTimeSeconds: 20,
+      MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
+      WaitTimeSeconds: 5,
     };
 
     try {
       const { Messages } = await sqs.receiveMessage(params).promise();
 
       if (Messages && Messages.length > 0) {
-        await processMessage(Messages[0]);
+        // Process multiple messages in parallel
+        await Promise.all(
+          Messages.map(async (message) => {
+            await processMessage(message);
+          })
+        );
       }
     } catch (error) {
       console.error("🔴 SQS receiveMessage error:", error);

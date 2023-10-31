@@ -11,7 +11,7 @@
   </div>
 
   <!-- * Form for uploading and converting image -->
-  <form action="/" method="post" enctype="multipart/form-data">
+  <form action="/result" method="post" enctype="multipart/form-data">
     <label for="image">Select Image:</label>
     <input type="file" name="image" id="image" accept="image/*" />
     <br />
@@ -50,38 +50,22 @@
     <div style="height: 15px;"></div>
 
     <!-- * Submit button -->
-    <button class="btn btn-inverse btn-custom" type="submit">Convert Image</button>
+    <button
+      class="btn btn-inverse btn-custom"
+      id="submitButton"
+      type="submit"
+    >Convert Image</button>
+    <p></p>
+
+    <!-- * Cancel button -->
+    <button id="cancelButton" class="btn btn-inverse btn-custom">Cancel</button>
   </form>
 
   <!-- * Text that appears while image is being processed -->
   <p
+    class="notification"
     id="processingText"
     style="font-family: 'Poppins'; display: none;"
   >Processing...</p>
   <br />
-
-  <!-- * Result section -->
-  {{#if result}}
-    <div class="result-container">
-      <!-- ! Download button -->
-      <a
-        href="data:image/jpeg;base64,{{convertedImage}}"
-        download={{newFilename}}
-      >
-        <button class="btn btn-success btn-custom">Download Image</button>
-      </a>
-    </div>
-
-    <!-- * Text showing the conversion result -->
-    <p id="result-text">{{result}}</p>
-
-    <!-- * Display the converted image -->
-    <img
-      class="converted-image"
-      src="data:image/jpeg;base64,{{convertedImage}}"
-      alt="Uploaded Image"
-    />
-
-    <div style="height: 15px;"></div>
-  {{/if}}
 </div>
