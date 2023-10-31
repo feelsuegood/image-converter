@@ -10,11 +10,12 @@ load_dotenv()
 
 # Constants
 url = os.getenv('REQUEST_URL')  # POST request
-MIN_COCURRENT_REQUESTS = 13  # Min concurrent requests
-MAX_COCURRENT_REQUESTS = 100  # Max concurrent requests
-ITERATION_REQUESTS = 30  # Number of iterations
-DELAY_BETWEEN_REQUESTS = 1  # Delay between requests in seconds
-TIMEOUT = 10  # POST request timeout in seconds
+COCURRENT_STEP = 1  # Step for concurrent requests
+MIN_COCURRENT_REQUESTS = 1  # Min concurrent requests
+MAX_COCURRENT_REQUESTS = 1000000000000  # Max concurrent requests
+ITERATION_REQUESTS = 1  # Number of iterations
+DELAY_BETWEEN_REQUESTS = 5  # Delay between requests in seconds
+TIMEOUT = 60  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_THREADS = 100  # Max threads
 IMAGE_FILE = 'test-10mb.jpg'  # Image file for upload
@@ -104,7 +105,7 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 def run_tests() -> None:
     """Run tests with varying numbers of concurrent requests."""
-    for num_concurrent in range(MIN_COCURRENT_REQUESTS, MAX_COCURRENT_REQUESTS + 1):
+    for num_concurrent in range(MIN_COCURRENT_REQUESTS, MAX_COCURRENT_REQUESTS + 1, COCURRENT_STEP):
         print(f"🚀 Running with {num_concurrent} concurrent requests.")
         perform_multiple_requests(
             num_concurrent, ITERATION_REQUESTS, DELAY_BETWEEN_REQUESTS)
