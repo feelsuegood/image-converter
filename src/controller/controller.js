@@ -19,12 +19,14 @@ const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 const completedFiles = new Map();
 
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
+const queueName = process.env.AWS_SQS_QUEUE_NAME;
 const pageTitle = "Image Converter";
-const fileSize = 2; // * file size limit: 2MB
-const maxWidth = 800;
-const maxHeight = 800;
+const fileSize = 10; // * file size limit: 10MB
+const maxWidth = 1920;
+const maxHeight = 1080;
 
 // * Create the S3 bucket - complete
+// ? should delete this? - we can show that we created this with codes
 // async function createS3bucket() {
 //   try {
 //     await s3.createBucket({ Bucket: bucketName }).promise();
@@ -42,6 +44,7 @@ const maxHeight = 800;
 // })();
 
 // * Create SQS queue - complete
+// ? should delete this? - we can show that we created this with codes
 // const createQueue = async (queueName) => {
 //   const params = {
 //     QueueName: queueName,
@@ -112,6 +115,144 @@ const handleHome = (req, res) => {
   });
 };
 
+// * Function to handle image conversion
+const handleConvert = async (req, res) => {
+  // Get the desired image width and height from the user
+  const desiredWidth = parseInt(req.body.width, 10);
+  const desiredHeight = parseInt(req.body.height, 10);
+  const desiredFormat = req.body.format.toLowerCase();
+  const originalFilename = req.file.key;
+  const newFilename = req.file.key.split(".")[0] + "." + desiredFormat; // S3 Object Key
+
+  // * Create a message to send to the SQS queue with relevant information
+  const messageParams = {
+    QueueUrl: process.env.AWS_SQS_URL, // Replace with your actual SQS queue URL
+    MessageBody: JSON.stringify({
+      filename: originalFilename,
+      width: desiredWidth,
+      height: desiredHeight,
+      format: desiredFormat,
+      bucketName: bucketName,
+    }),
+  };
+
+  try {
+    // Send the message to the SQS queue
+    console.log("🟢 Sending message to queue...");
+    await sqs.sendMessage(messageParams).promise();
+
+    // Wait for the SQS job to complete
+    console.log("🟢 Waiting for message from queue...");
+    const { Messages } = await sqs
+      .receiveMessage({
+        QueueUrl: process.env.AWS_SQS_URL,
+        MaxNumberOfMessages: 10,
+        WaitTimeSeconds: 5,
+      })
+      .promise();
+    if (Messages && Messages.length > 0) {
+      // Process multiple messages in parallel
+      await Promise.all(
+        Messages.map(async (message) => {
+          await processMessage(message); // Process each message
+        })
+      );
+    } else {
+      // connect image and sqs message
+      if (completedFiles.has(newFilename)) {
+        // Since the image processing operation is finished, import the image back from S3.
+        const retrievedImage = await s3
+          .getObject({
+            Bucket: bucketName,
+            Key: newFilename,
+          })
+          .promise();
+        const imageBase64 = retrievedImage.Body.toString("base64");
+
+        // Render the result
+        res.render("result", {
+          pageTitle,
+          resultFilename: newFilename,
+          resultDimensions: `${desiredWidth}x${desiredHeight}`,
+          convertedImage: imageBase64, // Pass the image data to the view
+          fileSize,
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`🔴 Error: ${error.message}`);
+    res.render("error", {
+      pageTitle,
+      result: `Error uploading to S3: ${error.message}`,
+    });
+  }
+};
+
+// * SQS: Process the message and convert the image
+const processMessage = async (message) => {
+  // ! Pay attention to processing speed
+  console.log("🟢 SQS message body:", message.Body);
+  // get the info from sqs message
+  const { filename, width, height, format, bucketName } = JSON.parse(
+    message.Body
+  );
+
+  // get the original image from s3
+  const params = {
+    Bucket: bucketName,
+    Key: filename,
+  };
+
+  console.log("🟢 original image S3 getObject Params:", params);
+
+  try {
+    const getObjectResponse = await s3.getObject(params).promise();
+
+    // Check for empty or null response
+    if (!getObjectResponse.Body) {
+      throw new Error(`Failed to get object from S3: ${filename}`);
+    }
+
+    const imageBuffer = getObjectResponse.Body;
+
+    // Perform image converting
+    const processedBuffer = await sharp(imageBuffer)
+      .resize(width, height) // change the size
+      .toFormat(format) // Change the format
+      .toBuffer();
+
+    const newFilename = filename.split(".")[0] + "." + format;
+
+    // Upload the converted image to S3
+    await s3
+      .upload({
+        Bucket: bucketName,
+        Key: newFilename,
+        Body: processedBuffer,
+        ContentType: `image/${format}`,
+      })
+      .promise();
+
+    // Add processed file names to Map
+    completedFiles.set(newFilename, true);
+    try {
+      // Delete the processed message from the SQS queue
+      await sqs
+        .deleteMessage({
+          QueueUrl: process.env.AWS_SQS_URL,
+          ReceiptHandle: message.ReceiptHandle,
+        })
+        .promise();
+      console.log("🟢 Message Deleted Successfully");
+    } catch (error) {
+      console.log("🔴 Delete Error", error);
+    }
+  } catch (error) {
+    console.error("🔴 Error processing message:", error);
+    // Handle the error, possibly by sending a notification or logging it
+  }
+};
+
 // * Poll the SQS queue for new messages
 const pollSQSQueue = async () => {
   while (true) {
@@ -142,169 +283,6 @@ const pollSQSQueue = async () => {
 pollSQSQueue().catch((error) => {
   console.error("🔴 SQS polling error:", error);
 });
-
-// * Function to handle image conversion
-const handleConvert = async (req, res) => {
-  // check if the file is uploaded
-  console.log("🟢 req.file:", req.file);
-  console.log("🟢 req.body:", req.body);
-
-  // Get the desired image width and height from the user
-  const desiredWidth = parseInt(req.body.width, 10);
-  const desiredHeight = parseInt(req.body.height, 10);
-  const desiredFormat = req.body.format.toLowerCase();
-  const s3ObjectKey = req.file.key; // S3 Object Key
-
-  // * Create a message to send to the SQS queue with relevant information
-  const messageParams = {
-    QueueUrl: process.env.AWS_SQS_URL, // Replace with your actual SQS queue URL
-    MessageBody: JSON.stringify({
-      filename: s3ObjectKey,
-      width: desiredWidth,
-      height: desiredHeight,
-      format: desiredFormat,
-      bucketName: bucketName,
-    }),
-  };
-  console.log("🟢 messageParams:", messageParams);
-
-  try {
-    // Send the message to the SQS queue
-    console.log("🟢 Sending message to queue...");
-    await sqs.sendMessage(messageParams).promise();
-
-    // Wait for the SQS job to complete
-    console.log("🟢 Waiting for message from queue...");
-    const { Messages } = await sqs
-      .receiveMessage({
-        QueueUrl: process.env.AWS_SQS_URL,
-        MaxNumberOfMessages: 1,
-        WaitTimeSeconds: 5,
-      })
-      .promise();
-    if (Messages && Messages.length > 0) {
-      // Process multiple messages in parallel
-      await Promise.all(
-        Messages.map(async (message) => {
-          await processMessage(message); // Process each message
-        })
-      );
-    } else {
-      // connect image and sqs message
-      if (completedFiles.has(s3ObjectKey)) {
-        // Since the image processing operation is finished, import the image back from S3.
-        const retrievedImage = await s3
-          .getObject({
-            Bucket: bucketName,
-            Key: s3ObjectKey,
-          })
-          .promise();
-        const imageBase64 = retrievedImage.Body.toString("base64");
-
-        // * Apply sharp operations to raise CPU utilisation - get rid of this if cpu utilisation is high without this
-        const enhancedImageBuffer = await sharp(retrievedImage.Body)
-          .blur(10) // Applies a blur filter to the image
-          .sharpen() // Applies a sharpening filter to the image
-          .normalize() // Normalizes the image's channel values
-          .rotate(90) // Rotates the image 90 degrees
-          .flip() // Flips the image vertically
-          .flop() // Flips the image horizontally
-          .resize({
-            // Resizes the image to higher dimensions
-            width: 2000,
-            height: 2000,
-            withoutEnlargement: false, // Allows the image to be enlarged
-          })
-          .jpeg({
-            quality: 100, // Sets the quality of the image to 100%
-          })
-          .toBuffer(); // Converts the processed image to a Buffer object
-
-        // Render the result
-        res.render("result", {
-          pageTitle,
-          resultFilename: s3ObjectKey,
-          resultDimensions: `${desiredWidth}x${desiredHeight}`,
-          s3ObjectKey,
-          convertedImage: imageBase64, // Pass the image data to the view
-          s3ObjectKey,
-          fileSize,
-          maxWidth,
-          maxHeight,
-        });
-      }
-    }
-  } catch (error) {
-    console.error(`🔴 Error: ${error.message}`);
-    res.render("error", {
-      pageTitle,
-      result: `Error uploading to S3: ${error.message}`,
-    });
-  }
-};
-
-// * SQS: Process the message and convert the image
-const processMessage = async (message) => {
-  // ! Slow part
-  console.log("🟢 SQS message body:", message.Body);
-  // get the info from sqs message
-  const { filename, width, height, format, bucketName } = JSON.parse(
-    message.Body
-  );
-
-  // get the original image from s3
-  const params = {
-    Bucket: bucketName,
-    Key: filename,
-  };
-
-  console.log("🟢 S3 getObject Params:", params);
-
-  try {
-    const getObjectResponse = await s3.getObject(params).promise();
-
-    // Check for empty or null response
-    if (!getObjectResponse.Body) {
-      throw new Error(`Failed to get object from S3: ${filename}`);
-    }
-
-    const imageBuffer = getObjectResponse.Body;
-
-    // Perform image converting
-    const processedBuffer = await sharp(imageBuffer)
-      .resize(width, height) // change the size
-      .toFormat(format) // Change the format
-      .toBuffer();
-
-    // Upload the converted image to S3
-    await s3
-      .upload({
-        Bucket: bucketName,
-        Key: filename,
-        Body: processedBuffer,
-        ContentType: `image/${format}`,
-      })
-      .promise();
-
-    // Add processed file names to Map
-    completedFiles.set(filename, true);
-    try {
-      // Delete the processed message from the SQS queue
-      await sqs
-        .deleteMessage({
-          QueueUrl: process.env.AWS_SQS_URL,
-          ReceiptHandle: message.ReceiptHandle,
-        })
-        .promise();
-      console.log("🟢 Message Deleted Successfully");
-    } catch (error) {
-      console.log("🔴 Delete Error", error);
-    }
-  } catch (error) {
-    console.error("🔴 Error processing message:", error);
-    // Handle the error, possibly by sending a notification or logging it
-  }
-};
 
 // * Export functions for external use
 module.exports = { upload, handleHome, handleConvert };

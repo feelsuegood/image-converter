@@ -61,11 +61,12 @@ label {
 }
 .result-container {
   margin-bottom: 15px;
+  overflow: auto;
 }
 
 .converted-image {
   max-width: 800px;
-  height: auto;
+  max-height: fit-content;
 }
 
 .notification {
