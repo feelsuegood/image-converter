@@ -9,12 +9,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Constants
-url = os.getenv('REQUEST_URL')  # POST request
+url_short = os.getenv('REQUEST_URL_CP14')  # POST request
+url_long = os.getenv('REQUEST_URL_CLOUD_PROJECT_14')  # POST request
+url = url_long
 COCURRENT_STEP = 1  # Step for concurrent requests
-MIN_COCURRENT_REQUESTS = 1  # Min concurrent requests
-MAX_COCURRENT_REQUESTS = 1000000000000  # Max concurrent requests
+INIT_COCURRENT_REQUESTS = 1  # Min concurrent requests
+LAST_COCURRENT_REQUESTS = 20  # Max concurrent requests
 ITERATION_REQUESTS = 1  # Number of iterations
-DELAY_BETWEEN_REQUESTS = 10  # Delay between requests in seconds
+DELAY = 20  # Delay between requests in seconds
 TIMEOUT = 60  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_THREADS = 100  # Max threads
@@ -103,13 +105,27 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
         thread.join()
 
 
-def run_tests() -> None:
+def run_test_up() -> None:
     """Run tests with varying numbers of concurrent requests."""
-    for num_concurrent in range(MIN_COCURRENT_REQUESTS, MAX_COCURRENT_REQUESTS + 1, COCURRENT_STEP):
-        print(f"🚀 Running with {num_concurrent} concurrent requests.")
+    for num_concurrent in range(INIT_COCURRENT_REQUESTS, LAST_COCURRENT_REQUESTS + 1, COCURRENT_STEP):
+        print(f"🚀 - Running with {num_concurrent} concurrent requests")
+        print(f"🛜  - on {url}")
         perform_multiple_requests(
-            num_concurrent, ITERATION_REQUESTS, DELAY_BETWEEN_REQUESTS)
+            num_concurrent, ITERATION_REQUESTS, DELAY)
+
+
+def run_test_down() -> None:
+    """Run tests with varying numbers of concurrent requests."""
+    for num_concurrent in range(LAST_COCURRENT_REQUESTS, INIT_COCURRENT_REQUESTS + 1, -COCURRENT_STEP):
+        print(f"🚀 - Running with {num_concurrent} concurrent requests")
+        print(f"🛜  - on {url}")
+        perform_multiple_requests(
+            num_concurrent, ITERATION_REQUESTS, DELAY)
 
 
 if __name__ == "__main__":
-    run_tests()
+    while True:  # Infinite loop to keep the program running
+        run_test_up()
+        time.sleep(DELAY)
+        run_test_down()
+        time.sleep(DELAY)  # Delay between tests
