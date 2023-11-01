@@ -1,22 +1,25 @@
-from typing import Any
-import os
-import time
-import requests
 import threading
+import requests
+import time
+import os
+from typing import Any
 from dotenv import load_dotenv
-
 # Load environment variables
 load_dotenv()
+
 
 # Constants
 url_short = os.getenv('REQUEST_URL_CP14')  # POST request
 url_long = os.getenv('REQUEST_URL_CLOUD_PROJECT_14')  # POST request
-url = url_long
+
+"""Select DNS."""
+url = url_short
+
 COCURRENT_STEP = 1  # Step for concurrent requests
 INIT_COCURRENT_REQUESTS = 1  # Min concurrent requests
-LAST_COCURRENT_REQUESTS = 20  # Max concurrent requests
-ITERATION_REQUESTS = 1  # Number of iterations
-DELAY = 20  # Delay between requests in seconds
+LAST_COCURRENT_REQUESTS = 25  # Max concurrent requests
+ITERATION_REQUESTS = 5  # Number of iterations
+DELAY = 5  # Delay between requests in seconds
 TIMEOUT = 60  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_THREADS = 100  # Max threads
@@ -86,8 +89,8 @@ def main(thread_number: int, total_threads: int, num_iterations: int, delay: int
     for i in range(num_iterations):
         thread_print(
             f'🧵 Thread {thread_number}/{total_threads} - ➡️ Iteration {i+1}/{num_iterations}')
-        perform_get(thread_number, total_threads)
-        time.sleep(delay)
+        # perform_get(thread_number, total_threads)
+        # time.sleep(delay)
         perform_post(thread_number, total_threads)
         time.sleep(delay)
 
@@ -127,5 +130,10 @@ if __name__ == "__main__":
     while True:  # Infinite loop to keep the program running
         run_test_up()
         time.sleep(DELAY)
+        for _ in range(100):
+            perform_multiple_requests(
+                LAST_COCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
         run_test_down()
         time.sleep(DELAY)  # Delay between tests
+        # run_test_up()
+        # time.sleep(DELAY)
