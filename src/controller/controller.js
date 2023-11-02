@@ -25,59 +25,61 @@ const fileSize = 10; // * file size limit: 10MB
 const maxWidth = 1920;
 const maxHeight = 1080;
 
-// * Create the S3 bucket - complete
-// ? should delete this? - we can show that we created this with codes
-// async function createS3bucket() {
-//   try {
-//     await s3.createBucket({ Bucket: bucketName }).promise();
-//     console.log(`🟢 Created bucket: ${bucketName}`);
-//   } catch (err) {
-//     if (err.statusCode === 409) {
-//       console.log(`🟡 Bucket already exists: ${bucketName}`);
-//     } else {
-//       console.log(`🔴 Error creating bucket: ${err}`);
-//     }
-//   }
-// }
-// (async () => {
-//   await createS3bucket();
-// })();
+// * Create the S3 bucket
+async function createS3bucket() {
+  try {
+    await s3.createBucket({ Bucket: bucketName }).promise();
+    console.log(`🟢 Created bucket: ${bucketName}`);
+  } catch (err) {
+    if (err.statusCode === 409) {
+      console.log(`🟡 Bucket already exists: ${bucketName}`);
+    } else {
+      console.log(`🔴 Error creating bucket: ${err}`);
+    }
+  }
+}
 
-// * Create SQS queue - complete
-// ? should delete this? - we can show that we created this with codes
-// const createQueue = async (queueName) => {
-//   const params = {
-//     QueueName: queueName,
-//   };
+// * Call createS3bucket function
+(async () => {
+  await createS3bucket();
+})();
 
-//   // List existing queues to check for duplicates
-//   try {
-//     const listQueuesResponse = await sqs.listQueues().promise();
-//     const existingQueues = listQueuesResponse.QueueUrls || [];
+// * Create SQS queue
+const createQueue = async (queueName) => {
+  const params = {
+    QueueName: queueName,
+  };
 
-//     // Check if queue with the same name already exists
-//     const duplicateQueue = existingQueues.find((url) =>
-//       url.endsWith(`/${queueName}`)
-//     );
-//     if (duplicateQueue) {
-//       console.log(
-//         `🟡 Queue with name ${queueName} already exists at URL: ${duplicateQueue}`
-//       );
-//       return;
-//     }
-//   } catch (error) {
-//     console.error("🔴 Error listing queues:", error);
-//   }
+  // List existing queues to check for same queue name
+  try {
+    const listQueuesResponse = await sqs.listQueues().promise();
+    const existingQueues = listQueuesResponse.QueueUrls || [];
 
-//   // Create the new queue if no duplicate found
-//   try {
-//     const result = await sqs.createQueue(params).promise();
-//     console.log(`🟢 Queue URL: ${result.QueueUrl}`);
-//   } catch (error) {
-//     console.error("🔴 Error creating queue:", error);
-//   }
-// };
-// createQueue(queueName);
+    // Check if queue with the same name already exists
+    const duplicateQueue = existingQueues.find((url) =>
+      url.endsWith(`/${queueName}`)
+    );
+    if (duplicateQueue) {
+      console.log(
+        `🟡 Queue with name ${queueName} already exists at URL: ${duplicateQueue}`
+      );
+      return;
+    }
+  } catch (error) {
+    console.error("🔴 Error listing queues:", error);
+  }
+
+  // Create the new queue if no same queue found
+  try {
+    const result = await sqs.createQueue(params).promise();
+    console.log(`🟢 Queue URL: ${result.QueueUrl}`);
+  } catch (error) {
+    console.error("🔴 Error creating queue:", error);
+  }
+};
+
+// * call createQueue function
+createQueue(queueName);
 
 // * Set up Multer file filter configuration
 const fileFilter = (req, file, cb) => {
@@ -115,7 +117,7 @@ const handleHome = (req, res) => {
   });
 };
 
-// * Function to handle image conversion
+// ! Function to handle image conversion
 const handleConvert = async (req, res) => {
   // Get the desired image width and height from the user
   const desiredWidth = parseInt(req.body.width, 10);
@@ -136,6 +138,7 @@ const handleConvert = async (req, res) => {
     }),
   };
 
+  // ! Related to SQS queue
   try {
     // Send the message to the SQS queue
     console.log("🟢 Sending message to queue...");
@@ -188,9 +191,9 @@ const handleConvert = async (req, res) => {
   }
 };
 
-// * SQS: Process the message and convert the image
+// ! Handle SQS Part: Process the message and convert the image
 const processMessage = async (message) => {
-  // ! Pay attention to processing speed
+  // Check the message body by logging it
   console.log("🟢 SQS message body:", message.Body);
   // get the info from sqs message
   const { filename, width, height, format, bucketName } = JSON.parse(
@@ -249,7 +252,6 @@ const processMessage = async (message) => {
     }
   } catch (error) {
     console.error("🔴 Error processing message:", error);
-    // Handle the error, possibly by sending a notification or logging it
   }
 };
 
@@ -275,7 +277,6 @@ const pollSQSQueue = async () => {
       }
     } catch (error) {
       console.error("🔴 SQS receiveMessage error:", error);
-      // Handle the error, possibly by sending a notification or logging it
     }
   }
 };
@@ -284,5 +285,5 @@ pollSQSQueue().catch((error) => {
   console.error("🔴 SQS polling error:", error);
 });
 
-// * Export functions for external use
+// Export functions for routes
 module.exports = { upload, handleHome, handleConvert };

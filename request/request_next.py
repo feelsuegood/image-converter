@@ -14,19 +14,18 @@ url_short = os.getenv('REQUEST_URL_CP14')  # POST request
 """Select DNS."""
 url = url_short
 
-COCURRENT_STEP = 3  # Step for concurrent requests
-INIT_COCURRENT_REQUESTS = 21  # Min concurrent requests
-LAST_COCURRENT_REQUESTS = 60  # Max concurrent requests
-ITERATION_REQUESTS = 30  # Number of iterations
+COCURRENT_STEP = 5  # Step for concurrent requests
+INIT_COCURRENT_REQUESTS = 5  # Min concurrent requests
+LAST_COCURRENT_REQUESTS = 50  # Max concurrent requests
+ITERATION_REQUESTS = 50  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
-TIMEOUT = 10  # 60 -> 90 to check 5xx errors // POST request timeout in seconds
+TIMEOUT = 15  # 60 -> 90 to check 5xx errors // POST request timeout in seconds
+RETRIES = 1  # Number of retries
 MAX_THREADS = 100  # Max threads
-IMAGE_FILE = 'test-2mb.jpg'  # Image file for upload
-
-"""image size for Instagram."""
-IMAGE_WIDTH = 1080  # Image width
-IMAGE_HEIGHT = 1080  # Image height
-IMAGE_FORMAT = 'JPEG'  # Image format
+IMAGE_FILE = 'test-3mb.jpg'  # Image file for upload
+IMAGE_WIDTH = 500  # Image width
+IMAGE_HEIGHT = 500  # Image height
+IMAGE_FORMAT = 'GIF'  # Image format
 
 
 def thread_print(*args: Any, **kwargs: Any) -> None:
@@ -55,32 +54,33 @@ def perform_post(thread_number: int, total_threads: int) -> None:
     form_data = {'width': IMAGE_WIDTH,
                  'height': IMAGE_HEIGHT, 'format': IMAGE_FORMAT}
 
-    try:
-        # Start timing the request
-        start_time = time.time()
+    for _ in range(RETRIES):
+        try:
+            # Start timing the request
+            start_time = time.time()
 
-        # Open image file for POST request
-        with open(IMAGE_FILE, 'rb') as f:
-            files = {'image': (IMAGE_FILE, f, 'image/jpeg')}
-            response = requests.post(
-                f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
+            # Open image file for POST request
+            with open(IMAGE_FILE, 'rb') as f:
+                files = {'image': (IMAGE_FILE, f, 'image/jpeg')}
+                response = requests.post(
+                    f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
 
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
+            # Calculate elapsed time
+            elapsed_time = time.time() - start_time
 
-        # Print status and time
-        if response.status_code == 200:
+            # Print status and time
+            if response.status_code == 200:
+                thread_print(
+                    f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
+                return
+
             thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
-            return
+                f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
 
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
-
-    except (requests.exceptions.RequestException, FileNotFoundError) as e:
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
-        time.sleep(2)
+        except (requests.exceptions.RequestException, FileNotFoundError) as e:
+            thread_print(
+                f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
+            time.sleep(2)
 
 
 def main(thread_number: int, total_threads: int, num_iterations: int, delay: int) -> None:

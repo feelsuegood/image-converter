@@ -1,19 +1,23 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Ubuntu:wght@400;500;700&family=Work+Sans:wght@400;600;800&display=swap");
+
 body {
   font-family: "Poppins", sans-serif;
   color: #484747;
   padding-top: 90px;
 }
+
 a,
 a:visited {
   color: #333;
   text-decoration: none;
 }
+
 input[type="number"],
 select {
   height: 30px;
   width: px;
 }
+
 .navbar-custom {
   position: fixed;
   top: 0;
@@ -21,11 +25,13 @@ select {
   left: 0;
   z-index: 1030;
 }
+
 .brand-section {
   height: 70px;
   max-height: fit-content;
   padding-top: 5px;
 }
+
 .all-section {
   margin-bottom: 15px;
   overflow: auto;
@@ -59,9 +65,16 @@ label {
   letter-spacing: 0.5px;
   margin-bottom: 8px;
 }
-
+.btn-set-image {
+  width: 230px;
+  font-family: "Poppins";
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0px;
+}
 .btn-custom {
-  width: 200px;
+  width: 230px;
   font-family: "Poppins";
   font-size: 14px;
   font-weight: 600;

@@ -1,4 +1,5 @@
 // Wait until the DOM is fully loaded
+// JavaScript code to handle Instagram button click
 document.addEventListener("DOMContentLoaded", function () {
   // Get references to the form and the processing text
   const form = document.querySelector("form");
@@ -27,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
       form.submit();
       processingText.style.display = "block";
 
-      // Wait for 3 seconds before running the interval function
+      // Wait for 5 seconds before running the interval function
       setTimeout(function () {
         let interval = setInterval(function () {
           // Increment the counter
@@ -46,7 +47,39 @@ document.addEventListener("DOMContentLoaded", function () {
     },
     5000
   );
+  document
+    .getElementById("instagramButton")
+    .addEventListener("click", function () {
+      // Set the width and height to 1080px for Instagram
+      document.getElementById("width").value = 1080;
+      document.getElementById("height").value = 1080;
 
+      // Set the image format to JPEG
+      document.getElementById("format").value = "jpeg";
+    });
+  // JavaScript for the YouTube Thumbnail button click
+  document
+    .getElementById("youtubeThumbnailButton")
+    .addEventListener("click", function () {
+      // Set width and height for YouTube Thumbnail
+      document.getElementById("width").value = 1280;
+      document.getElementById("height").value = 720;
+
+      // Set image format to JPEG
+      document.getElementById("format").value = "jpeg";
+    });
+
+  // JavaScript for the LinkedIn Profile button click
+  document
+    .getElementById("linkedinProfileButton")
+    .addEventListener("click", function () {
+      // Set width and height for LinkedIn Profile
+      document.getElementById("width").value = 400;
+      document.getElementById("height").value = 400;
+
+      // Set image format to JPEG
+      document.getElementById("format").value = "jpeg";
+    });
   // * Attach click event to 'cancelButton'
   document
     .getElementById("cancelButton")

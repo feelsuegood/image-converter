@@ -7,8 +7,8 @@ const {
 } = require("../controller/controller");
 
 /* GET home page. */
-/* POST upload and convrt image */
 Router.get("/", handleHome);
+/* POST upload and convert image */
 Router.post("/result", upload.single("image"), handleConvert);
 
 module.exports = Router;
