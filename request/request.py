@@ -9,24 +9,18 @@ load_dotenv()
 
 
 # Constants
-url_short = os.getenv('REQUEST_URL_CP14')  # POST request
+url = os.getenv('REQUEST_URL')  # POST request
 
-"""Select DNS."""
-url = url_short
-
-COCURRENT_STEP = 3  # Step for concurrent requests
-INIT_COCURRENT_REQUESTS = 21  # Min concurrent requests
-LAST_COCURRENT_REQUESTS = 60  # Max concurrent requests
-ITERATION_REQUESTS = 30  # Number of iterations
+COCURRENT_REQUESTS = 5  # Max concurrent requests
+ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
-TIMEOUT = 10  # 60 -> 90 to check 5xx errors // POST request timeout in seconds
-MAX_THREADS = 100  # Max threads
-IMAGE_FILE = 'test-2mb.jpg'  # Image file for upload
-
-"""image size for Instagram."""
-IMAGE_WIDTH = 1080  # Image width
-IMAGE_HEIGHT = 1080  # Image height
-IMAGE_FORMAT = 'JPEG'  # Image format
+TIMEOUT = 60  # POST request timeout in seconds
+RETRIES = 1  # Number of retries
+MAX_ITERATION = 100  # Max threads
+FILE = 'test-10mb.jpg'  # Image file for upload
+WIDTH = 1920  # Image width
+HEIGHT = 1080  # Image height
+FORMAT = 'JPEG'  # Image format
 
 
 def thread_print(*args: Any, **kwargs: Any) -> None:
@@ -52,42 +46,43 @@ def perform_get(thread_number: int, total_threads: int) -> None:
 
 def perform_post(thread_number: int, total_threads: int) -> None:
     """Perform a POST request with image upload."""
-    form_data = {'width': IMAGE_WIDTH,
-                 'height': IMAGE_HEIGHT, 'format': IMAGE_FORMAT}
+    form_data = {'width': WIDTH,
+                 'height': HEIGHT, 'format': FORMAT}
 
-    try:
-        # Start timing the request
-        start_time = time.time()
+    for _ in range(RETRIES):
+        try:
+            # Start timing the request
+            start_time = time.time()
 
-        # Open image file for POST request
-        with open(IMAGE_FILE, 'rb') as f:
-            files = {'image': (IMAGE_FILE, f, 'image/jpeg')}
-            response = requests.post(
-                f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
+            # Open image file for POST request
+            with open(FILE, 'rb') as f:
+                files = {'image': (FILE, f, 'image/jpeg')}
+                response = requests.post(
+                    f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
 
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
+            # Calculate elapsed time
+            elapsed_time = time.time() - start_time
 
-        # Print status and time
-        if response.status_code == 200:
+            # Print status and time
+            if response.status_code == 200:
+                thread_print(
+                    f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
+                return
+
             thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
-            return
+                f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
 
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
-
-    except (requests.exceptions.RequestException, FileNotFoundError) as e:
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
-        time.sleep(2)
+        except (requests.exceptions.RequestException, FileNotFoundError) as e:
+            thread_print(
+                f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
+            time.sleep(2)
 
 
 def main(thread_number: int, total_threads: int, num_iterations: int, delay: int) -> None:
     """Main function to run GET and POST requests for each thread."""
     for i in range(num_iterations):
         thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - ➡️ Iteration {i+1}/{num_iterations}')
+            f'🧵 Thread {thread_number}/{total_threads} - ➡️   Iteration {i+1}/{num_iterations}')
         # perform_get(thread_number, total_threads)
         # time.sleep(delay)
         perform_post(thread_number, total_threads)
@@ -97,7 +92,7 @@ def main(thread_number: int, total_threads: int, num_iterations: int, delay: int
 def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, delay: int) -> None:
     """Run multiple threads to perform requests."""
     threads = []
-    for i in range(min(MAX_THREADS, num_threads)):
+    for i in range(min(MAX_ITERATION, num_threads)):
         thread = threading.Thread(target=main, args=(
             i+1, num_threads, num_iterations_per_thread, delay))
         threads.append(thread)
@@ -107,30 +102,7 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
         thread.join()
 
 
-def run_test_up() -> None:
-    """Run tests with varying numbers of concurrent requests."""
-    for num_concurrent in range(INIT_COCURRENT_REQUESTS, LAST_COCURRENT_REQUESTS + 1, COCURRENT_STEP):
-        print(f"🚀 - Running with {num_concurrent} concurrent requests")
-        print(f"🛜  - on {url}")
-        perform_multiple_requests(
-            num_concurrent, ITERATION_REQUESTS, DELAY)
-
-
-def run_test_down() -> None:
-    """Run tests with varying numbers of concurrent requests."""
-    for num_concurrent in range(LAST_COCURRENT_REQUESTS, INIT_COCURRENT_REQUESTS + 1, -COCURRENT_STEP):
-        print(f"🚀 - Running with {num_concurrent} concurrent requests")
-        print(f"🛜  - on {url}")
-        perform_multiple_requests(
-            num_concurrent, ITERATION_REQUESTS, DELAY)
-
-
 if __name__ == "__main__":
-    # while True:  # Infinite loop to keep the program running
-    run_test_up()
-    time.sleep(DELAY)
-    for _ in range(100):
-        perform_multiple_requests(
-            LAST_COCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
-    run_test_down()
-    time.sleep(DELAY)  # Delay between tests
+    # for _ in range(100):
+    perform_multiple_requests(
+        COCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
