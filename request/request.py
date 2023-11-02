@@ -17,9 +17,9 @@ url = url_short
 
 COCURRENT_STEP = 1  # Step for concurrent requests
 INIT_COCURRENT_REQUESTS = 1  # Min concurrent requests
-LAST_COCURRENT_REQUESTS = 25  # Max concurrent requests
-ITERATION_REQUESTS = 5  # Number of iterations
-DELAY = 5  # Delay between requests in seconds
+LAST_COCURRENT_REQUESTS = 10  # Max concurrent requests
+ITERATION_REQUESTS = 100  # Number of iterations
+DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 60  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_THREADS = 100  # Max threads
