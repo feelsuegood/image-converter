@@ -1,20 +1,26 @@
-from typing import Any
-import os
-import time
-import requests
 import threading
+import requests
+import time
+import os
+from typing import Any
 from dotenv import load_dotenv
-
 # Load environment variables
 load_dotenv()
 
+
 # Constants
-url = os.getenv('REQUEST_URL')  # POST request
-MIN_COCURRENT_REQUESTS = 13  # Min concurrent requests
-MAX_COCURRENT_REQUESTS = 100  # Max concurrent requests
-ITERATION_REQUESTS = 30  # Number of iterations
-DELAY_BETWEEN_REQUESTS = 1  # Delay between requests in seconds
-TIMEOUT = 10  # POST request timeout in seconds
+url_short = os.getenv('REQUEST_URL_CP14')  # POST request
+url_long = os.getenv('REQUEST_URL_CLOUD_PROJECT_14')  # POST request
+
+"""Select DNS."""
+url = url_short
+
+COCURRENT_STEP = 1  # Step for concurrent requests
+INIT_COCURRENT_REQUESTS = 1  # Min concurrent requests
+LAST_COCURRENT_REQUESTS = 10  # Max concurrent requests
+ITERATION_REQUESTS = 100  # Number of iterations
+DELAY = 2  # Delay between requests in seconds
+TIMEOUT = 60  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_THREADS = 100  # Max threads
 IMAGE_FILE = 'test-10mb.jpg'  # Image file for upload
@@ -83,8 +89,8 @@ def main(thread_number: int, total_threads: int, num_iterations: int, delay: int
     for i in range(num_iterations):
         thread_print(
             f'🧵 Thread {thread_number}/{total_threads} - ➡️ Iteration {i+1}/{num_iterations}')
-        perform_get(thread_number, total_threads)
-        time.sleep(delay)
+        # perform_get(thread_number, total_threads)
+        # time.sleep(delay)
         perform_post(thread_number, total_threads)
         time.sleep(delay)
 
@@ -102,13 +108,32 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
         thread.join()
 
 
-def run_tests() -> None:
+def run_test_up() -> None:
     """Run tests with varying numbers of concurrent requests."""
-    for num_concurrent in range(MIN_COCURRENT_REQUESTS, MAX_COCURRENT_REQUESTS + 1):
-        print(f"🚀 Running with {num_concurrent} concurrent requests.")
+    for num_concurrent in range(INIT_COCURRENT_REQUESTS, LAST_COCURRENT_REQUESTS + 1, COCURRENT_STEP):
+        print(f"🚀 - Running with {num_concurrent} concurrent requests")
+        print(f"🛜  - on {url}")
         perform_multiple_requests(
-            num_concurrent, ITERATION_REQUESTS, DELAY_BETWEEN_REQUESTS)
+            num_concurrent, ITERATION_REQUESTS, DELAY)
+
+
+def run_test_down() -> None:
+    """Run tests with varying numbers of concurrent requests."""
+    for num_concurrent in range(LAST_COCURRENT_REQUESTS, INIT_COCURRENT_REQUESTS + 1, -COCURRENT_STEP):
+        print(f"🚀 - Running with {num_concurrent} concurrent requests")
+        print(f"🛜  - on {url}")
+        perform_multiple_requests(
+            num_concurrent, ITERATION_REQUESTS, DELAY)
 
 
 if __name__ == "__main__":
-    run_tests()
+    while True:  # Infinite loop to keep the program running
+        run_test_up()
+        time.sleep(DELAY)
+        for _ in range(100):
+            perform_multiple_requests(
+                LAST_COCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
+        run_test_down()
+        time.sleep(DELAY)  # Delay between tests
+        # run_test_up()
+        # time.sleep(DELAY)
