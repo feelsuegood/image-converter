@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let timeout; // Define a variable to hold the timeout ID
   let formSubmitted = false; // Define a flag to track if the form has been submitted successfully
   let counter = 0; // Count the number of retries
-  let maxRetries = 5; // Maximum number of retries
+  let maxRetries = 3; // Maximum number of retries
 
   form.addEventListener(
     "submit",
@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Get reference to the file input element
       const fileInput = document.getElementById("image");
+      const submitButton = form.querySelector("#submitButton"); // Get the submit button within the form
 
       // Check if any file is uploaded
       if (fileInput.files.length === 0) {
@@ -26,7 +27,13 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       form.submit();
-      processingText.style.display = "block";
+      submitButton.disabled = true;
+
+      // Scroll through the screen to processingText.
+      processingText.style.display = "block"; // Display the processingText
+      setTimeout(function () {
+        processingText.scrollIntoView({ behavior: "smooth" }); // Scroll to processingText
+      }, 100);
 
       // Wait for 5 seconds before running the interval function
       setTimeout(function () {
