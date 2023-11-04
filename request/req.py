@@ -7,19 +7,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
 # Constants
 url = os.getenv('REQUEST_URL')  # POST request
 
 COCURRENT_REQUESTS = 5  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
-# TIMEOUT = 60  # POST request timeout in seconds - Removed TIMEOUT variable
+TIMEOUT = 7  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_ITERATION = 100  # Max threads
-FILE = 'test-10mb.jpg'  # Image file for upload
-WIDTH = 1920  # Image width
-HEIGHT = 1080  # Image height
-FORMAT = 'JPEG'  # Image format
+FILE = 'test-2mb.jpg'  # Image file for upload
+WIDTH = 500  # Image width
+HEIGHT = 300  # Image height
+FORMAT = 'GIF'  # Image format
 
 
 def thread_print(*args: Any, **kwargs: Any) -> None:
@@ -31,7 +32,7 @@ def thread_print(*args: Any, **kwargs: Any) -> None:
 def perform_get(thread_number: int, total_threads: int) -> None:
     """Perform a GET request."""
     try:
-        response = requests.get(url)  # Removed the timeout option
+        response = requests.get(url, timeout=TIMEOUT)
         if response.status_code == 200:
             thread_print(
                 f'🧵 Thread {thread_number}/{total_threads} - 🔹 GET Successful')
@@ -57,7 +58,7 @@ def perform_post(thread_number: int, total_threads: int) -> None:
             with open(FILE, 'rb') as f:
                 files = {'image': (FILE, f, 'image/jpeg')}
                 response = requests.post(
-                    f"{url}result", data=form_data, files=files)  # Removed the timeout option
+                    f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
 
             # Calculate elapsed time
             elapsed_time = time.time() - start_time
@@ -102,5 +103,6 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 
 if __name__ == "__main__":
+    # for _ in range(100):
     perform_multiple_requests(
         COCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
