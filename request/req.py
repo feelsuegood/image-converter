@@ -7,21 +7,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-
+# http://ec2-54-252-129-113.ap-southeast-2.compute.amazonaws.com:3000/
+# http://cp14-828256056.ap-southeast-2.elb.amazonaws.com/
 # Constants
-# url = os.getenv('REQUEST_URL')  # POST request
-url = 'http://localhost:3000/'
-
-COCURRENT_REQUESTS = 5  # Max concurrent requests
+url = 'http://cp14-828256056.ap-southeast-2.elb.amazonaws.com/'
+COCURRENT_REQUESTS = 2  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 7  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_ITERATION = 100  # Max threads
-FILE = 'test-2mb.jpg'  # Image file for upload
-WIDTH = 500  # Image width
-HEIGHT = 300  # Image height
-FORMAT = 'GIF'  # Image format
+FILE = 'test-10mb.jpg'  # Image file for upload
+WIDTH = 1920  # Image width
+HEIGHT = 1080  # Image height
+FORMAT = 'JPEG'  # Image format
 
 
 def thread_print(*args: Any, **kwargs: Any) -> None:
