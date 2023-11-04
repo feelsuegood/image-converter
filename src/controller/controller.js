@@ -4,9 +4,6 @@ dotenv.config();
 const AWS = require("aws-sdk");
 const multer = require("multer");
 const path = require("path");
-// ! delete later
-// const fs = require("fs");
-// const sharp = require("sharp");
 const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
 
@@ -91,7 +88,7 @@ const handleConvert = async (req, res) => {
     const pollInterval = 1000; // Polling interval (1 second)
     let elapsedTime = 0;
 
-    // Function to check if a processed image file exists in S3
+    // Function to check if the processed image file exists in S3
     const checkComplete = async () => {
       try {
         await s3
@@ -118,6 +115,7 @@ const handleConvert = async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       elapsedTime += pollInterval;
     }
+
     // Get the converted image from S3
     const retrievedImage = await s3
       .getObject({

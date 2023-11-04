@@ -8,9 +8,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
 const AWS = require("aws-sdk");
-// const fs = require("fs");
 const sharp = require("sharp");
-// const { v4: uuidv4 } = require("uuid");
 
 const Router = require("../src/routes/router");
 
