@@ -32,12 +32,6 @@ select {
   padding-top: 5px;
 }
 
-#brand {
-  font-size: 38px;
-  font-weight: bold;
-  padding-left: 30px;
-}
-
 .all-section {
   margin-bottom: 15px;
   overflow: auto;
@@ -61,12 +55,6 @@ select {
 
 .info-section ul li {
   line-height: 1.6;
-}
-.blank-section {
-  height: 30px;
-}
-.small-blank-section {
-  height: 5px;
 }
 
 label {
@@ -146,9 +134,4 @@ label {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
-}
-
-#processingText {
-  font-family: "Poppins";
-  display: none;
 }
