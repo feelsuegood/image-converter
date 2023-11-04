@@ -1,13 +1,8 @@
 // Wait until the DOM is fully loaded
-// JavaScript code to handle Instagram button click
 document.addEventListener("DOMContentLoaded", function () {
-  // Get references to the form and the processing text
   const form = document.querySelector("form");
+  // Get references to the form and the processing text
   const processingText = document.getElementById("processingText");
-  let timeout; // Define a variable to hold the timeout ID
-  let formSubmitted = false; // Define a flag to track if the form has been submitted successfully
-  let counter = 0; // Count the number of retries
-  let maxRetries = 3; // Maximum number of retries
 
   form.addEventListener("submit", function (e) {
     // Prevent the default form submission
@@ -40,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 15000);
   });
 
-  // * Attach click event to 'cancelButton'
+  // Attach click event to 'cancelButton'
   document
     .getElementById("cancelButton")
     .addEventListener("click", function (e) {
@@ -52,9 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Navigate to the root router
       window.location.href = "/";
-
-      // Clear the timeout if the cancel button is clicked
-      clearTimeout(timeout);
     });
 
   // JavaScript for the Instagram button click
