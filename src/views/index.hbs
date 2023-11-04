@@ -1,12 +1,14 @@
 <!-- * Main container for the whole page -->
 <div class="container">
+  <p>Welcome to Image Converter! Please upload a suitable image and specify the desired size.</p>
+  <p>You can select a Social Media option below to automatically fill in the required dimensions needed for a profile picture!</p>
   <!-- * Information section with file requirements -->
   <div class="container info-section">
-    <p>Hello!!</p>
+    <p id="requirements">Requirements for the selected image:</p>
     <ul>
       <!-- * List down the file upload requirements -->
       <li>File size limit: {{fileSize}}MB</li>
-      <li>Only JPEG, GIF, and WEBP are available</li>
+      <li>Only JPEG, GIF, and WEBP images can be converted and chosen as the output file type.</li>
       <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}px</li>
     </ul>
   </div>
@@ -16,6 +18,22 @@
     <label for="image">Select Image:</label>
     <input type="file" name="image" id="image" accept="image/*" />
     <br />
+
+    <!-- * Dropdown for seclecting social media -->
+    <label for="socialMedia">Desired Social Media (Optional):</label>
+    <select name="socialMedia" id="socialMedia" required>
+      {{!-- Dimensions for each social media: 
+            Insta: 320px x 320px
+            Facebook: 170px x 170px
+            Twitter: 400px x 400px
+      --}}
+      <option value="" selected>None</option> 
+      <option value="Instagram">Instagram</option> 
+      <option value="Facebook">Facebook</option>
+      <option value="Twitter">Twitter</option>
+    </select>
+    <br />
+
 
     <!-- * Field for specifying desired image width -->
     <label for="width">Desired Width:</label>

@@ -4,6 +4,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const form = document.querySelector("form");
   const processingText = document.getElementById("processingText");
 
+  const socialMediaDropDown = document.getElementById("socialMedia");
+
+  // * Attach an event listener to the social media dropdown
+  socialMediaDropDown.addEventListener("change", function (e) {
+    alert(option.value);
+  });
+  
   // * Attach an event listener to the form submit action
   form.addEventListener("submit", function (e) {
     // * Get reference to the file input element

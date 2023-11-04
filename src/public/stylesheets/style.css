@@ -22,7 +22,7 @@ select {
   padding: 15px;
   margin: 20px 0;
   width: 400px;
-  height: 60px;
+  height: 110px;
 }
 
 .info-section ul {
@@ -35,6 +35,15 @@ select {
 
 label {
   font-size: 14px;
+  font-weight: 600;
+  color: #4a4a4a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+#requirements {
+  font-size: 12px;
   font-weight: 600;
   color: #4a4a4a;
   text-transform: uppercase;
