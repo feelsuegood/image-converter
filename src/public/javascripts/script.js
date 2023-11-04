@@ -20,13 +20,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     form.submit();
-    processingText.style.display = "block";
+    submitButton.disabled = true;
+
+    // Scroll through the screen to processingText.
+    processingText.style.display = "block"; // Display the processingText
+    setTimeout(function () {
+      processingText.scrollIntoView({ behavior: "smooth" }); // Scroll to processingText
+    }, 100);
 
     // Show alert message if processing an image is too long
     setTimeout(function () {
       alert("Please try again.");
       window.location.href = "/";
-    }, 10000);
+    }, 60000);
   });
 
   // Attach click event to 'cancelButton'

@@ -128,7 +128,7 @@ const handleConvert = async (req, res) => {
 
   // * Create a message to send to the SQS queue with relevant information
   const messageParams = {
-    QueueUrl: process.env.AWS_SQS_URL, // Replace with your actual SQS queue URL
+    QueueUrl: process.env.AWS_SQS_URL,
     MessageBody: JSON.stringify({
       filename: originalFilename,
       width: desiredWidth,
@@ -149,7 +149,7 @@ const handleConvert = async (req, res) => {
     const { Messages } = await sqs
       .receiveMessage({
         QueueUrl: process.env.AWS_SQS_URL,
-        MaxNumberOfMessages: 10,
+        MaxNumberOfMessages: 1,
         WaitTimeSeconds: 5,
       })
       .promise();
