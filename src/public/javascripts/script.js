@@ -18,24 +18,25 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("Please upload an image file.");
       return;
     }
-
+    // Submit the form
     form.submit();
+    // Disable the submit button
     submitButton.disabled = true;
-
+    // Display the processingText
+    processingText.style.display = "block";
     // Scroll through the screen to processingText.
-    processingText.style.display = "block"; // Display the processingText
     setTimeout(function () {
-      processingText.scrollIntoView({ behavior: "smooth" }); // Scroll to processingText
+      processingText.scrollIntoView({ behavior: "smooth" });
     }, 100);
-
+    // Display an alert message after a certain period of time and direct home page
     setTimeout(function () {
       alert("Please try again");
       submitButton.disabled = false;
       window.location.href = "/";
-    }, 15000);
+    }, 10000);
   });
 
-  // Attach click event to 'cancelButton'
+  // Click event to 'cancelButton'
   document
     .getElementById("cancelButton")
     .addEventListener("click", function (e) {
@@ -49,39 +50,29 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.href = "/";
     });
 
-  // JavaScript for the Instagram button click
+  // Set the image properties based on the button clicked
+  function setImageProperties(width, height, format = "jpeg") {
+    document.getElementById("width").value = width;
+    document.getElementById("height").value = height;
+    document.getElementById("format").value = format;
+  }
+
+  // Event listeners for button clicks
   document
     .getElementById("instagramButton")
     .addEventListener("click", function () {
-      // Set the width and height to 1080px for Instagram
-      document.getElementById("width").value = 1080;
-      document.getElementById("height").value = 1080;
-
-      // Set the image format to JPEG
-      document.getElementById("format").value = "jpeg";
+      setImageProperties(1080, 1080); // Instagram size
     });
 
-  // JavaScript for the YouTube Thumbnail button click
   document
     .getElementById("youtubeThumbnailButton")
     .addEventListener("click", function () {
-      // Set width and height for YouTube Thumbnail
-      document.getElementById("width").value = 1280;
-      document.getElementById("height").value = 720;
-
-      // Set image format to JPEG
-      document.getElementById("format").value = "jpeg";
+      setImageProperties(1280, 720); // YouTube Thumbnail size
     });
 
-  // JavaScript for the LinkedIn Profile button click
   document
     .getElementById("linkedinProfileButton")
     .addEventListener("click", function () {
-      // Set width and height for LinkedIn Profile
-      document.getElementById("width").value = 400;
-      document.getElementById("height").value = 400;
-
-      // Set image format to JPEG
-      document.getElementById("format").value = "jpeg";
+      setImageProperties(400, 400); // LinkedIn Profile size
     });
 });
