@@ -9,7 +9,8 @@ load_dotenv()
 
 
 # Constants
-url = os.getenv('REQUEST_URL')  # POST request
+# url = os.getenv('REQUEST_URL')  # POST request
+url = 'http://localhost:3000/'
 
 COCURRENT_REQUESTS = 5  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations

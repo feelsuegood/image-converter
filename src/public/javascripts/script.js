@@ -4,6 +4,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // Get references to the form and the processing text
   const form = document.querySelector("form");
   const processingText = document.getElementById("processingText");
+  let timeout; // Define a variable to hold the timeout ID
+  let formSubmitted = false; // Define a flag to track if the form has been submitted successfully
+  let counter = 0; // Count the number of retries
+  let maxRetries = 3; // Maximum number of retries
 
   form.addEventListener("submit", function (e) {
     // Prevent the default form submission
@@ -11,6 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Get reference to the file input element
     const fileInput = document.getElementById("image");
+    const submitButton = form.querySelector("#submitButton"); // Get the submit button within the form
 
     // Check if any file is uploaded
     if (fileInput.files.length === 0) {
@@ -20,16 +25,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     form.submit();
-    processingText.style.display = "block";
+    submitButton.disabled = true;
 
-    // Show alert message if processing an image is too long
+    // Scroll through the screen to processingText.
+    processingText.style.display = "block"; // Display the processingText
     setTimeout(function () {
-      alert("Please try again.");
+      processingText.scrollIntoView({ behavior: "smooth" }); // Scroll to processingText
+    }, 100);
+
+    setTimeout(function () {
+      alert("Please try again");
+      submitButton.disabled = false;
       window.location.href = "/";
-    }, 10000);
+    }, 15000);
   });
 
-  // Attach click event to 'cancelButton'
+  // * Attach click event to 'cancelButton'
   document
     .getElementById("cancelButton")
     .addEventListener("click", function (e) {
@@ -41,9 +52,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Navigate to the root router
       window.location.href = "/";
+
+      // Clear the timeout if the cancel button is clicked
+      clearTimeout(timeout);
     });
 
-  // Instagram Post autofill
+  // JavaScript for the Instagram button click
   document
     .getElementById("instagramButton")
     .addEventListener("click", function () {
@@ -54,7 +68,8 @@ document.addEventListener("DOMContentLoaded", function () {
       // Set the image format to JPEG
       document.getElementById("format").value = "jpeg";
     });
-  // YouTube Thumbnail autofill
+
+  // JavaScript for the YouTube Thumbnail button click
   document
     .getElementById("youtubeThumbnailButton")
     .addEventListener("click", function () {
@@ -66,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("format").value = "jpeg";
     });
 
-  // LinkedIn Profile autofill
+  // JavaScript for the LinkedIn Profile button click
   document
     .getElementById("linkedinProfileButton")
     .addEventListener("click", function () {

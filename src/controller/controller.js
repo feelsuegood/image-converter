@@ -128,7 +128,7 @@ const handleConvert = async (req, res) => {
 
   // * Create a message to send to the SQS queue with relevant information
   const messageParams = {
-    QueueUrl: process.env.AWS_SQS_URL,
+    QueueUrl: process.env.AWS_SQS_URL, // Replace with your actual SQS queue URL
     MessageBody: JSON.stringify({
       filename: originalFilename,
       width: desiredWidth,
@@ -149,7 +149,7 @@ const handleConvert = async (req, res) => {
     const { Messages } = await sqs
       .receiveMessage({
         QueueUrl: process.env.AWS_SQS_URL,
-        MaxNumberOfMessages: 1,
+        MaxNumberOfMessages: 10,
         WaitTimeSeconds: 5,
       })
       .promise();
@@ -258,14 +258,14 @@ const processMessage = async (message) => {
 // * Poll the SQS queue for new messages
 const pollSQSQueue = async () => {
   while (true) {
-    const params = {
-      QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
-      MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
-      WaitTimeSeconds: 5,
-    };
-
     try {
-      const { Messages } = await sqs.receiveMessage(params).promise();
+      const { Messages } = await sqs
+        .receiveMessage({
+          QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
+          MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
+          WaitTimeSeconds: 5,
+        })
+        .promise();
 
       if (Messages && Messages.length > 0) {
         // Process multiple messages in parallel
