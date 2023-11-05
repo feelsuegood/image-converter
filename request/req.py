@@ -11,12 +11,13 @@ load_dotenv()
 # http://cp14-828256056.ap-southeast-2.elb.amazonaws.com/
 # Constants
 url = 'http://cp14-828256056.ap-southeast-2.elb.amazonaws.com/'
-COCURRENT_REQUESTS = 2  # Max concurrent requests
+COCURRENT_REQUESTS = 1  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 7  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_ITERATION = 100  # Max threads
+# Test maximum file size
 FILE = 'test-10mb.jpg'  # Image file for upload
 WIDTH = 1920  # Image width
 HEIGHT = 1080  # Image height
