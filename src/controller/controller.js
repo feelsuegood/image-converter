@@ -4,8 +4,6 @@ dotenv.config();
 const AWS = require("aws-sdk");
 const multer = require("multer");
 const path = require("path");
-// const fs = require("fs");
-// const sharp = require("sharp");
 const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
 
@@ -15,11 +13,7 @@ const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 
-// * Global variables to hold processed files
-const completedFiles = new Map();
-
 const pageTitle = "Image Converter";
-// * 이미지 용량 줄여야 할듯
 const fileSize = 10; // * file size limit: 10MB
 const maxWidth = 1920;
 const maxHeight = 1080;
@@ -60,9 +54,9 @@ const handleHome = (req, res) => {
   });
 };
 
-// ! handle image conversion rendering
+// * handle image conversion rendering
 const handleConvert = async (req, res) => {
-  // Get the desired image width and height from the user
+  // Get the desired image width, height, and format from a user
   const desiredWidth = parseInt(req.body.width, 10);
   const desiredHeight = parseInt(req.body.height, 10);
   const desiredFormat = req.body.format.toLowerCase();
@@ -81,21 +75,22 @@ const handleConvert = async (req, res) => {
     }),
   };
 
-  // ! Related to SQS queue
+  // ! Related to SQS queue processing
   try {
     // Send the message to the SQS queue
     console.log("🟢 Sending message to queue...");
     await sqs.sendMessage(messageParams).promise();
     console.log("📤 SQS message body:", messageParams.MessageBody);
+
     // Wait for the SQS job to complete
     console.log("🟢 Waiting for message from queue...");
     const maxWaitTime = 10000; // Maximum wait time (10 seconds)
     const pollInterval = 1000; // Polling interval (1 second)
     let elapsedTime = 0;
 
-    const checkCondition = async () => {
+    // Function to check if the processed image file exists in S3
+    const checkComplete = async () => {
       try {
-        // Check for file in S3 bucket
         await s3
           .getObject({
             Bucket: bucketName,
@@ -111,7 +106,7 @@ const handleConvert = async (req, res) => {
     };
 
     while (elapsedTime < maxWaitTime) {
-      const conditionMet = await checkCondition();
+      const conditionMet = await checkComplete();
       if (conditionMet) {
         break; // Exit the loop if the condition is met
       }
@@ -121,6 +116,7 @@ const handleConvert = async (req, res) => {
       elapsedTime += pollInterval;
     }
 
+    // Get the converted image from S3
     const retrievedImage = await s3
       .getObject({
         Bucket: bucketName,
@@ -135,7 +131,7 @@ const handleConvert = async (req, res) => {
       pageTitle,
       resultFilename: newFilename,
       resultDimensions: `${desiredWidth}x${desiredHeight}`,
-      convertedImage: imageBase64, // Pass the image data to the view
+      convertedImage: imageBase64, // Pass the image data to the view template
       fileSize,
     });
   } catch (error) {
@@ -147,5 +143,5 @@ const handleConvert = async (req, res) => {
   }
 };
 
-// Export functions for routes
+// Export callback function to router
 module.exports = { handleHome, upload, handleConvert };

@@ -7,21 +7,18 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-
-# Constants
-# url = os.getenv('REQUEST_URL')  # POST request
-url = 'http://localhost:3000/'
-
-COCURRENT_REQUESTS = 5  # Max concurrent requests
+url = os.getenv('URL_LB')
+COCURRENT_REQUESTS = 1  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 7  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_ITERATION = 100  # Max threads
-FILE = 'test-2mb.jpg'  # Image file for upload
-WIDTH = 500  # Image width
-HEIGHT = 300  # Image height
-FORMAT = 'GIF'  # Image format
+# Test maximum file size
+FILE = 'test-10mb.jpg'  # Image file for upload
+WIDTH = 1920  # Image width
+HEIGHT = 1080  # Image height
+FORMAT = 'JPEG'  # Image format
 
 
 def thread_print(*args: Any, **kwargs: Any) -> None:

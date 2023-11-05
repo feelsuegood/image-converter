@@ -8,16 +8,11 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
 const AWS = require("aws-sdk");
-// const fs = require("fs");
 const sharp = require("sharp");
-// const { v4: uuidv4 } = require("uuid");
 
 const Router = require("../src/routes/router");
 
 const app = express();
-
-// * Global variables to hold processed files
-const completedFiles = new Map();
 
 // * Set up AWS configuration
 const s3 = new AWS.S3();
@@ -155,8 +150,6 @@ const processMessage = async (message) => {
       })
       .promise();
 
-    // Add processed file names to Map
-    completedFiles.set(newFilename, true);
     try {
       // Delete the processed message from the SQS queue
       await sqs
