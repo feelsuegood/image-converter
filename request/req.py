@@ -12,7 +12,7 @@ load_dotenv()
 
 
 url = os.getenv('URL_LB')
-COCURRENT_REQUESTS = 5  # Max concurrent requests
+COCURRENT_REQUESTS = 10  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 10  # POST request timeout in seconds
