@@ -7,10 +7,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# http://ec2-54-252-129-113.ap-southeast-2.compute.amazonaws.com:3000/
-# http://cp14-828256056.ap-southeast-2.elb.amazonaws.com/
-# Constants
-url = 'http://cp14-828256056.ap-southeast-2.elb.amazonaws.com/'
+url = os.getenv('URL_LB')
 COCURRENT_REQUESTS = 1  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
