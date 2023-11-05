@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 url = os.getenv('URL_LB')
-COCURRENT_REQUESTS = 1  # Max concurrent requests
+COCURRENT_REQUESTS = 3  # Max concurrent requests
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 7  # POST request timeout in seconds
