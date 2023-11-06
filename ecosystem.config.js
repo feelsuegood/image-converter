@@ -1,8 +1,12 @@
 module.exports = {
   apps: [
     {
-      name: "cloud-project-14",
+      name: "web",
       script: "./src/bin/www",
+    },
+    {
+      name: "aws",
+      script: "./src/aws/s3SQSWorker.js",
     },
   ],
 };
