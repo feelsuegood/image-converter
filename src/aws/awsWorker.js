@@ -156,6 +156,7 @@ const pollSQSQueue = async () => {
   }
 };
 
+// * Call pollSQSQueue function
 pollSQSQueue().catch((error) => {
   console.error("🔴 SQS polling error:", error);
 });

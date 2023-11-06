@@ -90,7 +90,7 @@ const handleConvert = async (req, res) => {
 
     // Function to check if the processed image file exists in S3
     // * change function name more suitable for this application
-    const checkComplete = async () => {
+    const checkConversionEned = async () => {
       try {
         await s3
           .getObject({
@@ -107,7 +107,7 @@ const handleConvert = async (req, res) => {
     };
 
     while (elapsedTime < maxWaitTime) {
-      const conditionMet = await checkComplete();
+      const conditionMet = await checkConversionEned();
       if (conditionMet) {
         break; // Exit the loop if the condition is met
       }

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "web": "nodemon -L ./src/bin/www",
-    "aws": "nodemon -L ./src/aws/awsorker.js",
+    "aws": "nodemon -L ./src/aws/awsWorker.js",
     "start": "concurrently \"npm run web\" \"npm run aws\""
   },
   "dependencies": {
