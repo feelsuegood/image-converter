@@ -1,6 +1,8 @@
 const dotenv = require("dotenv");
 dotenv.config();
+
 const AWS = require("aws-sdk");
+// module for image conversion
 const sharp = require("sharp");
 
 // * Set up AWS configuration
@@ -66,7 +68,7 @@ const createQueue = async (queueName) => {
 // * call createQueue function
 createQueue(queueName);
 
-// ! Handle SQS Part: Process the message and convert the image
+// * Handle SQS Part: Process the message and convert the image
 const processMessage = async (message) => {
   // Check the message body by logging it
   console.log("🟢 SQS message body:", message.Body);
