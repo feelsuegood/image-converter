@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "web": "nodemon -L ./src/bin/www",
-    "sqs": "nodemon -L ./src/aws/s3SQSWorker.js",
-    "start": "concurrently \"npm run web\" \"npm run sqs\""
+    "aws": "nodemon -L ./src/aws/awsorker.js",
+    "start": "concurrently \"npm run web\" \"npm run aws\""
   },
   "dependencies": {
     "aws-sdk": "^2.1480.0",

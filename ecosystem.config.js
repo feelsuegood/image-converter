@@ -6,7 +6,7 @@ module.exports = {
     },
     {
       name: "aws",
-      script: "./src/aws/s3SQSWorker.js",
+      script: "./src/aws/awsWorker.js",
     },
   ],
 };
