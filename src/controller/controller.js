@@ -89,6 +89,7 @@ const handleConvert = async (req, res) => {
     let elapsedTime = 0;
 
     // Function to check if the processed image file exists in S3
+    // * change function name more suitable for this application
     const checkComplete = async () => {
       try {
         await s3

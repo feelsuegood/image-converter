@@ -19,7 +19,7 @@ TIMEOUT = 10  # POST request timeout in seconds
 RETRIES = 1  # Number of retries
 MAX_ITERATION = 100  # Max threads
 # Test maximum file size
-FILE = 'test-img/test-10mb.jpg'  # Image file for upload
+FILE = 'test-img/test-6mb.jpg'  # Image file for upload
 WIDTH = 1920  # Image width
 HEIGHT = 1080  # Image height
 FORMAT = 'JPEG'  # Image format
