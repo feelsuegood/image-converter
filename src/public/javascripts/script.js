@@ -1,6 +1,5 @@
 // JavaScript for requesting a pre-signed URL and uploading an image
 async function uploadImage() {
-  document.getElementById("loadingIndicator").style.display = "block";
   // const form = document.getElementById("uploadForm");
   const fileInput = document.getElementById("image");
   const file = fileInput.files[0];
@@ -12,6 +11,8 @@ async function uploadImage() {
     alert("Please fill all items.");
     return;
   }
+  document.body.classList.add("loading");
+  document.getElementById("loadingIndicator").style.display = "block";
 
   try {
     // * Get the pre-signed URL
@@ -57,6 +58,7 @@ async function uploadImage() {
   } finally {
     // Hide loading message
     document.getElementById("loadingIndicator").style.display = "none";
+    document.body.classList.remove("loading");
   }
 }
 
