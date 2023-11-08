@@ -29,52 +29,24 @@ const handleHome = (req, res) => {
 };
 
 // * call-back function that generates pre-signed URL
-const handleGetUrl = async (req, res) => {
-  const key = `${uuidv4()}.jpg`; // unique filename for S3 object
+const handleGetPresignedUrl = async (req, res) => {
+  const key = `${uuidv4()}.jpg`; // need to change file format part -> 유저가 선택한 파일 포맷으로 변경
 
   const params = {
     Bucket: bucketName,
     Key: key,
-    Expires: 60, // URL 유효 시간 (초 단위)
+    Expires: 60, // expires in 60 seconds
   };
 
-  s3.getSignedUrl("putObject", params, (err, url) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
-      res.json({ key, url });
-    }
-  });
+  try {
+    const url = await s3.getSignedUrlPromise("putObject", params);
+    res.json({ key, url });
+  } catch (error) {
+    res.status(500).send(error);
+  }
 };
 
-// // * Set up Multer file filter configuration
-// const fileFilter = (req, file, cb) => {
-//   const allowedTypes = ["image/jpeg", "image/gif", "image/webp"];
-//   if (!allowedTypes.includes(file.mimetype)) {
-//     cb(new Error("Only JPEG, GIF, and WEBP types are allowed!"), false);
-//   } else {
-//     cb(null, true);
-//   }
-// };
-
-// // * Setup Multer with S3 configuration
-// const upload = multer({
-//   storage: multerS3({
-//     s3: s3,
-//     bucket: bucketName,
-//     metadata: function (req, file, cb) {
-//       cb(null, { fieldName: file.fieldname });
-//     },
-//     key: function (req, file, cb) {
-//       cb(null, uuidv4() + path.extname(file.originalname));
-//     },
-//   }),
-//   fileFilter: fileFilter,
-//   limits: { fileSize: fileSize * 1024 * 1024 },
-// });
-
-// * handle image conversion rendering
-
+// * handle image conversion rendering - call sqsWorker
 const handleSendSQS = async (req, res) => {
   const { key, width, height, format } = req.body;
 
@@ -192,4 +164,4 @@ const handleConvert = async (req, res) => {
 };
 
 // Export callback function to router
-module.exports = { handleHome, handleGetUrl, handleConvert };
+module.exports = { handleHome, handleGetPresignedUrl, handleConvert };

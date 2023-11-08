@@ -2,15 +2,15 @@ const express = require("express");
 const Router = express.Router();
 const {
   handleHome,
-  generatePresignedUrl,
   handleConvert,
+  handleGetPresignedUrl,
 } = require("../controller/controller");
 
 /* GET home page. */
 Router.get("/", handleHome);
 
 /* Pre-signed URL Request Route for Image Upload */
-Router.get("/upload-url", generatePresignedUrl);
+Router.get("/get-presigned-url", handleGetPresignedUrl);
 
 /* POST upload and convert image */
 Router.post("/result", upload.single("image"), handleConvert);
