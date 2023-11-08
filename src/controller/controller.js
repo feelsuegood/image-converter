@@ -2,9 +2,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const AWS = require("aws-sdk");
-const multer = require("multer");
-const path = require("path");
-const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
+// const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 // * Initialize AWS services
@@ -30,7 +28,9 @@ const handleHome = (req, res) => {
 
 // * call-back function that generates pre-signed URL
 const handleGetPresignedUrl = async (req, res) => {
-  const key = `${uuidv4()}.jpg`; // need to change file format part -> 유저가 선택한 파일 포맷으로 변경
+  console.log("req.body:", req.body);
+  const format = req.body.format || "jpg";
+  const key = `${uuidv4()}.${format}`;
 
   const params = {
     Bucket: bucketName,
@@ -40,41 +40,17 @@ const handleGetPresignedUrl = async (req, res) => {
 
   try {
     const url = await s3.getSignedUrlPromise("putObject", params);
-    res.render("result", { key, url });
+    res.json({ key, url });
   } catch (error) {
     res.status(500).send(error);
   }
 };
 
-// * handle image conversion rendering - call sqsWorker
-const handleSendSQS = async (req, res) => {
-  const { key, width, height, format } = req.body;
-
-  const messageBody = {
-    key,
-    width,
-    height,
-    format,
-    bucketName,
-  };
-
-  const params = {
-    QueueUrl: sqsQueueUrl,
-    MessageBody: JSON.stringify(messageBody),
-  };
-
-  sqs.sendMessage(params, (err, data) => {
-    if (err) {
-      console.error("Error sending message to SQS:", err);
-      res.status(500).send(err);
-    } else {
-      console.log("Message sent to SQS:", data.MessageId);
-      res.send({ message: "Conversion request sent" });
-    }
-  });
-};
-
 const handleConvert = async (req, res) => {
+  console.log("req.body:", req.body);
+  console.log("req.file:", req.file);
+  console.log("req.query:", req.query);
+  console.log("req.params:", req.params);
   // Get the desired image width, height, and format from a user
   const desiredWidth = parseInt(req.body.width, 10);
   const desiredHeight = parseInt(req.body.height, 10);
@@ -161,6 +137,34 @@ const handleConvert = async (req, res) => {
       result: `Error uploading to S3: ${error.message}`,
     });
   }
+};
+
+// * handle image conversion rendering - call sqsWorker
+const handleSendSQS = async (req, res) => {
+  const { key, width, height, format } = req.body;
+
+  const messageBody = {
+    key,
+    width,
+    height,
+    format,
+    bucketName,
+  };
+
+  const params = {
+    QueueUrl: sqsQueueUrl,
+    MessageBody: JSON.stringify(messageBody),
+  };
+
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.error("Error sending message to SQS:", err);
+      res.status(500).send(err);
+    } else {
+      console.log("Message sent to SQS:", data.MessageId);
+      res.send({ message: "Conversion request sent" });
+    }
+  });
 };
 
 // Export callback function to router

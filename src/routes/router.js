@@ -1,4 +1,6 @@
 const express = require("express");
+const multer = require("multer");
+const upload = multer();
 
 const Router = express.Router();
 const {
@@ -11,9 +13,9 @@ const {
 Router.get("/", handleHome);
 
 /* Pre-signed URL Request Route for Image Upload */
-Router.get("/get-presigned-url", handleGetPresignedUrl);
+Router.get("/presigned-url", handleGetPresignedUrl);
 
 /* POST upload and convert image */
-Router.post("/result", handleConvert);
+Router.post("/result", upload.none(), handleConvert);
 
 module.exports = Router;

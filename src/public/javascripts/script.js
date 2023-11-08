@@ -14,18 +14,23 @@ async function uploadImage() {
 
   try {
     // Request a pre-signed URL from the server
-    const response = await fetch("/get-presigned-url");
+    const response = await fetch("/presigned-url");
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}`);
+    }
     const data = await response.json();
 
     // Upload the file to S3 using the pre-signed URL
-    await fetch(data.url, {
+    const uploadResponse = await fetch(data.url, {
       method: "PUT",
       headers: {
         "Content-Type": `image/${format}`,
       },
       body: file,
     });
-
+    if (!uploadResponse.ok) {
+      throw new Error(`Failed to upload image: ${uploadResponse.status}`);
+    }
     // Set form data and send it to the server
     const formData = new FormData(form);
     formData.append("imageKey", data.key); // Add the key generated via pre-signed URL
@@ -39,10 +44,21 @@ async function uploadImage() {
       body: formData,
     });
 
-    // Process the result
-    // ...
+    // show the the result
+    const resultData = await result.json();
+    if (resultData.convertedImageUrl) {
+      // Display the image or provide a download link
+      const imageContainer = document.getElementById("imageContainer"); // 이미지를 표시할 컨테이너
+      imageContainer.innerHTML = `<img src="${resultData.convertedImageUrl}" alt="Converted Image"/>`;
+
+      // Optionally, provide a download link
+      imageContainer.innerHTML += `<a href="${resultData.convertedImageUrl}" download>Download Converted Image</a>`;
+    } else {
+      alert("Image conversion failed.");
+    }
   } catch (error) {
     console.error("Error:", error);
+    alert(error.message);
   }
 }
 
