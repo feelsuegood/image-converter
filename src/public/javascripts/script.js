@@ -16,7 +16,7 @@ async function uploadImage() {
 
   try {
     // * Get the pre-signed URL
-    const response = await fetch("/presigned-url");
+    const response = await fetch("/presigned-url?format=" + format);
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
@@ -41,14 +41,22 @@ async function uploadImage() {
     const resultResponse = await fetch("/result", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: data.key, width, height, format }),
+      body: JSON.stringify({
+        key: data.key,
+        url: data.url,
+        width,
+        height,
+        format,
+      }),
     });
     if (resultResponse.ok) {
       window.location.href = `/result?key=${encodeURIComponent(
         data.key
-      )}&format=${encodeURIComponent(format)}&width=${encodeURIComponent(
-        width
-      )}&height=${encodeURIComponent(height)}`;
+      )}&url=${encodeURIComponent(data.url)}&format=${encodeURIComponent(
+        format
+      )}&width=${encodeURIComponent(width)}&height=${encodeURIComponent(
+        height
+      )}`;
     } else {
       throw new Error(`Error in image processing: ${resultResponse.status}`);
     }
@@ -68,7 +76,6 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("cancelButton")
     .addEventListener("click", function (e) {
       e.preventDefault();
-      document.getElementById("processingText").style.display = "none";
       window.location.href = "/";
     });
 
