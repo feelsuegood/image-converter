@@ -49,11 +49,11 @@ const handleGetPresignedUrl = async (req, res) => {
 const handlePostResult = async (req, res) => {
   console.log("🔹 handleResult req.body:", req.body);
   // Get the desired image width, height, and format from a user
-  const desiredWidth = parseInt(req.body.width, 10);
-  const desiredHeight = parseInt(req.body.height, 10);
-  const desiredFormat = req.body.format;
+  const width = parseInt(req.body.width, 10);
+  const height = parseInt(req.body.height, 10);
+  const format = req.body.format;
   const originalFilename = req.body.key;
-  const newFilename = req.body.key.split(".")[0] + "." + desiredFormat; // S3 Object Key
+  const newFilename = req.body.key.split(".")[0] + "." + format; // S3 Object Key
   console.log("🔹 newFilename:", newFilename);
 
   // * Create a message to send to the SQS queue with relevant information
@@ -61,10 +61,10 @@ const handlePostResult = async (req, res) => {
     QueueUrl: process.env.AWS_SQS_URL,
     MessageBody: JSON.stringify({
       filename: originalFilename,
-      width: desiredWidth,
-      height: desiredHeight,
-      format: desiredFormat,
-      bucketName: bucketName,
+      width,
+      height,
+      format,
+      bucketName,
     }),
   };
   // * handle image conversion rendering - sening message to SQS
@@ -106,8 +106,24 @@ const handlePostResult = async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       elapsedTime += pollInterval;
     }
+    const retrievedImage = await s3
+      .getObject({
+        Bucket: bucketName,
+        Key: newFilename,
+      })
+      .promise();
+
+    const imageBase64 = retrievedImage.Body.toString("base64");
+
+    // * Render the result
+    res.render("result", {
+      pageTitle,
+      resultFilename: newFilename,
+      resultDimensions: `${width}x${height}`,
+      convertedImage: imageBase64, // Pass the image data to the view template
+    });
   } catch (error) {
-    console.error(`🔴 Error(controller): ${error.message}`);
+    console.error(`🔴 Post Result Error: ${error.message}`);
     res.render("error", {
       pageTitle,
       result: `Error uploading to S3: ${error.message}`,

@@ -1,6 +1,7 @@
 // JavaScript for requesting a pre-signed URL and uploading an image
 async function uploadImage() {
-  const form = document.getElementById("uploadForm");
+  document.getElementById("loadingIndicator").style.display = "block";
+  // const form = document.getElementById("uploadForm");
   const fileInput = document.getElementById("image");
   const file = fileInput.files[0];
   const width = document.getElementById("width").value;
@@ -13,10 +14,12 @@ async function uploadImage() {
   }
 
   try {
+    // * Get the pre-signed URL
     const response = await fetch("/presigned-url");
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
+    // * Get the data from user and upload image to S3
     const data = await response.json();
     data.width = width;
     data.height = height;
@@ -33,6 +36,7 @@ async function uploadImage() {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
 
+    // * Send the request to process the image
     const resultResponse = await fetch("/result", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,6 +54,9 @@ async function uploadImage() {
   } catch (error) {
     console.error("Error:", error);
     alert(error.message);
+  } finally {
+    // Hide loading message
+    document.getElementById("loadingIndicator").style.display = "none";
   }
 }
 

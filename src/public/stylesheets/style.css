@@ -148,7 +148,9 @@ label {
   margin-bottom: 8px;
 }
 
-#processingText {
-  font-family: "Poppins";
-  display: none;
+#loadingIndicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

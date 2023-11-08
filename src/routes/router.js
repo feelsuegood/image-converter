@@ -15,10 +15,7 @@ Router.get("/", handleHome);
 /* GET Pre-signed URL Request Route for Image Upload */
 Router.get("/presigned-url", handleGetPresignedUrl);
 
-/* POST upload and convert image */
-Router.post("/result", handlePostResult);
-
-/* POST upload and convert image */
-Router.get("/result", handleGetResult);
+/* POST GET upload and convert image */
+Router.route("/result").post(handlePostResult).get(handleGetResult);
 
 module.exports = Router;

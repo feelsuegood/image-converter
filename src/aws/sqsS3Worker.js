@@ -174,8 +174,9 @@ const pollSQSQueue = async () => {
       const { Messages } = await sqs
         .receiveMessage({
           QueueUrl: sqsQueueUrl, // Use the environment variable
-          MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
-          WaitTimeSeconds: 5,
+          MaxNumberOfMessages: 10, // get multiple messages
+          WaitTimeSeconds: 20, // Long polling
+          VisibilityTimeout: 180, // 3 minutes
         })
         .promise();
 
@@ -189,6 +190,7 @@ const pollSQSQueue = async () => {
       }
     } catch (error) {
       console.error("🔴 SQS receiveMessage error:", error);
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // try again after 10 seconds
     }
   }
 };
