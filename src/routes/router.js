@@ -1,14 +1,21 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
 const Router = express.Router();
 const {
   handleHome,
-  handleConvert,
-  upload,
+  handleGetPresignedUrl,
+  handlePostResult,
+  handleGetResult,
 } = require("../controller/controller");
 
 /* GET home page. */
 Router.get("/", handleHome);
-/* POST upload and convert image */
-Router.post("/result", upload.single("image"), handleConvert);
+
+/* GET Pre-signed URL Request Route for Image Upload */
+Router.get("/presigned-url", handleGetPresignedUrl);
+
+/* POST GET upload and convert image */
+Router.route("/result").post(handlePostResult).get(handleGetResult);
 
 module.exports = Router;

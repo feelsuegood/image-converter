@@ -9,15 +9,17 @@ load_dotenv()
 
 
 url = os.getenv('URL_LB')
-CONCURRENT_REQUESTS = 5  # Max concurrent requests
+
+CONCURRENT_REQUESTS = 1  # Max concurrent requests
+
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 10  # POST request timeout in seconds
 MAX_ITERATION = 100  # Max threads
 # Test maximum file size
-FILE = 'test-img/test-10mb.jpg'  # Image file for upload
-WIDTH = 500  # Image width
-HEIGHT = 300  # Image height
+FILE = 'test-img/test-2mb.jpg'  # Image file for upload
+WIDTH = 1920  # Image width
+HEIGHT = 1080  # Image height
 FORMAT = 'JPEG'  # Image format
 
 

@@ -1,78 +1,90 @@
-// Wait until the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.querySelector("form");
-  // Get references to the form and the processing text
-  const processingText = document.getElementById("processingText");
+// JavaScript for requesting a pre-signed URL and uploading an image
+async function uploadImage() {
+  // const form = document.getElementById("uploadForm");
+  const fileInput = document.getElementById("image");
+  const file = fileInput.files[0];
+  const width = document.getElementById("width").value;
+  const height = document.getElementById("height").value;
+  const format = document.getElementById("format").value;
 
-  form.addEventListener("submit", function (e) {
-    // Prevent the default form submission
-    e.preventDefault();
+  if (!file || !width || !height) {
+    alert("Please fill all items.");
+    return;
+  }
+  document.body.classList.add("loading");
+  document.getElementById("loadingIndicator").style.display = "block";
 
-    // Get reference to the file input element
-    const fileInput = document.getElementById("image");
-    const submitButton = form.querySelector("#submitButton"); // Get the submit button within the form
-
-    // Check if any file is uploaded
-    if (fileInput.files.length === 0) {
-      console.log("No file uploaded"); // Log the error message
-      alert("Please upload an image file.");
-      return;
+  try {
+    // * Get the pre-signed URL
+    const response = await fetch("/presigned-url");
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}`);
     }
-    // Submit the form
-    form.submit();
-    // Disable the submit button
-    submitButton.disabled = true;
-    // Display the processingText
-    processingText.style.display = "block";
-    // Scroll through the screen to processingText.
-    setTimeout(function () {
-      processingText.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-    // Display an alert message after a certain period of time and direct home page
-    setTimeout(function () {
-      alert("Please try again");
-      submitButton.disabled = false;
-      window.location.href = "/";
-    }, 10000);
-  });
+    // * Get the data from user and upload image to S3
+    const data = await response.json();
+    data.width = width;
+    data.height = height;
+    data.format = format;
+    console.log("🔹 data:", data);
+    const uploadResponse = await fetch(data.url, {
+      method: "PUT",
+      headers: { "Content-Type": `image/${format}` },
+      body: file,
+    });
+    console.log("🔹 uploadResponse:", uploadResponse);
+    console.log("🔹 uploadResponse.ok:", uploadResponse.ok);
+    if (!uploadResponse.ok) {
+      throw new Error(`Failed to upload image: ${uploadResponse.status}`);
+    }
 
-  // Click event to 'cancelButton'
+    // * Send the request to process the image
+    const resultResponse = await fetch("/result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: data.key, width, height, format }),
+    });
+    if (resultResponse.ok) {
+      window.location.href = `/result?key=${encodeURIComponent(
+        data.key
+      )}&format=${encodeURIComponent(format)}&width=${encodeURIComponent(
+        width
+      )}&height=${encodeURIComponent(height)}`;
+    } else {
+      throw new Error(`Error in image processing: ${resultResponse.status}`);
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    alert(error.message);
+  } finally {
+    // Hide loading message
+    document.getElementById("loadingIndicator").style.display = "none";
+    document.body.classList.remove("loading");
+  }
+}
+
+// * Handle button clicks
+document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("cancelButton")
     .addEventListener("click", function (e) {
-      // Prevent form submission
       e.preventDefault();
-
-      // Hide the 'processingText'
-      processingText.style.display = "none";
-
-      // Navigate to the root router
+      document.getElementById("processingText").style.display = "none";
       window.location.href = "/";
     });
 
-  // Set the image properties based on the button clicked
   function setImageProperties(width, height, format = "jpeg") {
     document.getElementById("width").value = width;
     document.getElementById("height").value = height;
     document.getElementById("format").value = format;
   }
 
-  // Event listeners for button clicks
   document
     .getElementById("instagramButton")
-    .addEventListener("click", function () {
-      setImageProperties(1080, 1080); // Instagram size
-    });
-
+    .addEventListener("click", () => setImageProperties(1080, 1080));
   document
     .getElementById("youtubeThumbnailButton")
-    .addEventListener("click", function () {
-      setImageProperties(1280, 720); // YouTube Thumbnail size
-    });
-
+    .addEventListener("click", () => setImageProperties(1280, 720));
   document
     .getElementById("linkedinProfileButton")
-    .addEventListener("click", function () {
-      setImageProperties(400, 400); // LinkedIn Profile size
-    });
+    .addEventListener("click", () => setImageProperties(400, 400));
 });

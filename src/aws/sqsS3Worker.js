@@ -11,20 +11,56 @@ const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 const queueName = process.env.AWS_SQS_QUEUE_NAME;
+const sqsQueueUrl = process.env.AWS_SQS_URL;
 
 // * Create the S3 bucket in SQS queue
-async function createS3bucket() {
+const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
+
+const createS3bucket = async () => {
+  // Define the addCorsConfiguration function
+  const addCorsConfiguration = async () => {
+    const client = new S3Client({ region: process.env.AWS_REGION });
+
+    const corsCommand = new PutBucketCorsCommand({
+      Bucket: bucketName,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedHeaders: ["*"],
+            AllowedMethods: ["GET", "POST", "PUT", "DELETE", "HEAD"],
+            AllowedOrigins: ["*"],
+          },
+        ],
+      },
+    });
+
+    try {
+      await client.send(corsCommand);
+      console.log(`CORS configuration added to the bucket: ${bucketName}`);
+    } catch (error) {
+      console.error(`Error adding CORS configuration: ${error}`);
+    }
+  };
+
   try {
     await s3.createBucket({ Bucket: bucketName }).promise();
     console.log(`🟢 Created bucket: ${bucketName}`);
   } catch (err) {
     if (err.statusCode === 409) {
-      console.log(`🟡 Bucket "${bucketName}" already exists`);
+      console.log(
+        `🟡 Bucket "${bucketName}" already exists. Updating CORS configuration.`
+      );
     } else {
       console.log(`🔴 Error creating bucket: ${err}`);
+      return; // Stop further execution in case of errors other than bucket already exists
     }
   }
-}
+
+  // Apply or update CORS configuration
+  await addCorsConfiguration();
+};
+
+// createS3bucket();
 
 // * Call createS3bucket function
 (async () => {
@@ -68,10 +104,10 @@ const createQueue = async (queueName) => {
 // * call createQueue function
 createQueue(queueName);
 
-// * Handle SQS Part: Process the message and convert the image
-const processMessage = async (message) => {
+// ! Handling the message and convert the image
+const processImage = async (message) => {
   // Check the message body by logging it
-  console.log("🟢 SQS message body:", message.Body);
+  console.log("🟢 Receiving SQS message body:", message.Body);
   // get the info from sqs message
   const { filename, width, height, format, bucketName } = JSON.parse(
     message.Body
@@ -83,7 +119,7 @@ const processMessage = async (message) => {
     Key: filename,
   };
 
-  console.log("🟢 original image S3 getObject Params:", params);
+  console.log("🔹 original image S3 getObject Params:", params);
 
   try {
     const getObjectResponse = await s3.getObject(params).promise();
@@ -112,12 +148,13 @@ const processMessage = async (message) => {
         ContentType: `image/${format}`,
       })
       .promise();
+    console.log("🔹 new imagefile:", newFilename);
 
     try {
       // Delete the processed message from the SQS queue
       await sqs
         .deleteMessage({
-          QueueUrl: process.env.AWS_SQS_URL,
+          QueueUrl: sqsQueueUrl,
           ReceiptHandle: message.ReceiptHandle,
         })
         .promise();
@@ -136,9 +173,10 @@ const pollSQSQueue = async () => {
     try {
       const { Messages } = await sqs
         .receiveMessage({
-          QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
-          MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
-          WaitTimeSeconds: 5,
+          QueueUrl: sqsQueueUrl, // Use the environment variable
+          MaxNumberOfMessages: 10, // get multiple messages
+          WaitTimeSeconds: 20, // Long polling
+          VisibilityTimeout: 180, // 3 minutes
         })
         .promise();
 
@@ -146,12 +184,13 @@ const pollSQSQueue = async () => {
         // Process multiple messages in parallel
         await Promise.all(
           Messages.map(async (message) => {
-            await processMessage(message);
+            await processImage(message);
           })
         );
       }
     } catch (error) {
       console.error("🔴 SQS receiveMessage error:", error);
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // try again after 10 seconds
     }
   }
 };
