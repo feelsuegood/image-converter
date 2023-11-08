@@ -2,7 +2,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const AWS = require("aws-sdk");
-// const path = require("path");
+const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 // * Initialize AWS services
@@ -28,9 +28,7 @@ const handleHome = (req, res) => {
 
 // * call-back function that generates pre-signed URL
 const handleGetPresignedUrl = async (req, res) => {
-  console.log("req.body:", req.body);
-  const format = req.body.format || "jpg";
-  const key = `${uuidv4()}.${format}`;
+  const key = `${uuidv4()}.jpeg`;
 
   const params = {
     Bucket: bucketName,

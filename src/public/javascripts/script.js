@@ -7,6 +7,13 @@ async function uploadImage() {
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
 
+  //! delete later
+  console.log(fileInput.files[0]);
+  console.log(file);
+  console.log(width);
+  console.log(height);
+  console.log(format);
+
   if (!file) {
     alert("Please upload an image file.");
     return;
@@ -15,6 +22,7 @@ async function uploadImage() {
   try {
     // Request a pre-signed URL from the server
     const response = await fetch("/presigned-url");
+    console.log("response:", response.json);
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
@@ -64,6 +72,20 @@ async function uploadImage() {
 
 // Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
+  // Click event to 'cancelButton'
+  document
+    .getElementById("cancelButton")
+    .addEventListener("click", function (e) {
+      // Prevent form submission
+      e.preventDefault();
+
+      // Hide the 'processingText'
+      processingText.style.display = "none";
+
+      // Navigate to the root router
+      window.location.href = "/";
+    });
+
   // Set the image properties based on the button clicked
   function setImageProperties(width, height, format = "jpeg") {
     document.getElementById("width").value = width;
