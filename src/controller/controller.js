@@ -55,6 +55,7 @@ const handlePostResult = async (req, res) => {
   const originalFilename = req.body.key;
   const newFilename = req.body.key.split(".")[0] + "." + desiredFormat; // S3 Object Key
   console.log("🔹 newFilename:", newFilename);
+
   // * Create a message to send to the SQS queue with relevant information
   const messageParams = {
     QueueUrl: process.env.AWS_SQS_URL,
@@ -69,12 +70,11 @@ const handlePostResult = async (req, res) => {
   // * handle image conversion rendering - sening message to SQS
   try {
     // Send the message to the SQS queue
-    console.log("🟢 Sending message to queue...");
     await sqs.sendMessage(messageParams).promise();
-    console.log("📤 SQS message body:", messageParams.MessageBody);
+    console.log("🔹 Sending SQS message body:", messageParams.MessageBody);
 
     // Wait for the SQS job to complete
-    console.log("🟢 Waiting for message from queue...");
+    console.log("🔹 Waiting for message from queue...");
     const maxWaitTime = 10000; // Maximum wait time (10 seconds)
     const pollInterval = 1000; // Polling interval (1 second)
     let elapsedTime = 0;

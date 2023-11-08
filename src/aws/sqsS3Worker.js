@@ -105,9 +105,9 @@ const createQueue = async (queueName) => {
 createQueue(queueName);
 
 // ! Handling the message and convert the image
-const processMessage = async (message) => {
+const processImage = async (message) => {
   // Check the message body by logging it
-  console.log("📥 SQS message body:", message.Body);
+  console.log("🟢 Receiving SQS message body:", message.Body);
   // get the info from sqs message
   const { filename, width, height, format, bucketName } = JSON.parse(
     message.Body
@@ -154,7 +154,7 @@ const processMessage = async (message) => {
       // Delete the processed message from the SQS queue
       await sqs
         .deleteMessage({
-          QueueUrl: process.env.AWS_SQS_URL,
+          QueueUrl: sqsQueueUrl,
           ReceiptHandle: message.ReceiptHandle,
         })
         .promise();
@@ -173,7 +173,7 @@ const pollSQSQueue = async () => {
     try {
       const { Messages } = await sqs
         .receiveMessage({
-          QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
+          QueueUrl: sqsQueueUrl, // Use the environment variable
           MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
           WaitTimeSeconds: 5,
         })
@@ -183,7 +183,7 @@ const pollSQSQueue = async () => {
         // Process multiple messages in parallel
         await Promise.all(
           Messages.map(async (message) => {
-            await processMessage(message);
+            await processImage(message);
           })
         );
       }
