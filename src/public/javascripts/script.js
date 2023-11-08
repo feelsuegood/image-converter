@@ -1,6 +1,5 @@
 // JavaScript for requesting a pre-signed URL and uploading an image
 async function uploadImage() {
-  // const form = document.getElementById("uploadForm");
   const fileInput = document.getElementById("image");
   const file = fileInput.files[0];
   const width = document.getElementById("width").value;
@@ -8,7 +7,7 @@ async function uploadImage() {
   const format = document.getElementById("format").value;
 
   if (!file || !width || !height) {
-    alert("Please fill all items.");
+    alert("Please fill all items in the form.");
     return;
   }
   document.body.classList.add("loading");
@@ -25,14 +24,13 @@ async function uploadImage() {
     data.width = width;
     data.height = height;
     data.format = format;
-    console.log("🔹 data:", data);
+    console.log("🔹 image conversion data:", data);
     const uploadResponse = await fetch(data.url, {
       method: "PUT",
       headers: { "Content-Type": `image/${format}` },
       body: file,
     });
     console.log("🔹 uploadResponse:", uploadResponse);
-    console.log("🔹 uploadResponse.ok:", uploadResponse.ok);
     if (!uploadResponse.ok) {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
@@ -49,6 +47,7 @@ async function uploadImage() {
         format,
       }),
     });
+    // * Redirect to the result page
     if (resultResponse.ok) {
       window.location.href = `/result?key=${encodeURIComponent(
         data.key
@@ -71,8 +70,8 @@ async function uploadImage() {
 }
 
 // * Handle button clicks
-
 document.addEventListener("DOMContentLoaded", function () {
+  // Cancle button
   const cancelButton = document.getElementById("cancelButton");
   if (cancelButton) {
     cancelButton.addEventListener("click", function (e) {
@@ -81,6 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // auto-fill button
   function setImageProperties(width, height, format = "jpeg") {
     document.getElementById("width").value = width;
     document.getElementById("height").value = height;
