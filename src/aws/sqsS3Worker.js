@@ -119,7 +119,7 @@ const processMessage = async (message) => {
     Key: filename,
   };
 
-  console.log("🟢 original image S3 getObject Params:", params);
+  console.log("🔹 original image S3 getObject Params:", params);
 
   try {
     const getObjectResponse = await s3.getObject(params).promise();
@@ -148,7 +148,7 @@ const processMessage = async (message) => {
         ContentType: `image/${format}`,
       })
       .promise();
-    console.log("🆕 new imagefile:", newFilename);
+    console.log("🔹 new imagefile:", newFilename);
 
     try {
       // Delete the processed message from the SQS queue

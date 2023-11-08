@@ -21,14 +21,14 @@ async function uploadImage() {
     data.width = width;
     data.height = height;
     data.format = format;
-    console.log("🟢data:", data);
+    console.log("🔹 data:", data);
     const uploadResponse = await fetch(data.url, {
       method: "PUT",
       headers: { "Content-Type": `image/${format}` },
       body: file,
     });
-    console.log("🟢uploadResponse:", uploadResponse);
-    console.log("🟢uploadResponse.ok:", uploadResponse.ok);
+    console.log("🔹 uploadResponse:", uploadResponse);
+    console.log("🔹 uploadResponse.ok:", uploadResponse.ok);
     if (!uploadResponse.ok) {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
