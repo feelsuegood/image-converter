@@ -17,7 +17,7 @@ const sqsQueueUrl = process.env.AWS_SQS_URL;
 const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
 
 const createS3bucket = async () => {
-  // Define the addCorsConfiguration function
+  // * CORS configuration
   const addCorsConfiguration = async () => {
     const client = new S3Client({ region: process.env.AWS_REGION });
 
@@ -27,7 +27,7 @@ const createS3bucket = async () => {
         CORSRules: [
           {
             AllowedHeaders: ["*"],
-            AllowedMethods: ["GET", "POST", "PUT", "DELETE", "HEAD"],
+            AllowedMethods: ["GET", "POST", "PUT", "HEAD"],
             AllowedOrigins: ["*"],
           },
         ],
@@ -59,8 +59,6 @@ const createS3bucket = async () => {
   // Apply or update CORS configuration
   await addCorsConfiguration();
 };
-
-// createS3bucket();
 
 // * Call createS3bucket function
 (async () => {
@@ -104,7 +102,7 @@ const createQueue = async (queueName) => {
 // * call createQueue function
 createQueue(queueName);
 
-// ! Handling the message and convert the image
+// * Handling the message and convert the image
 const processImage = async (message) => {
   // Check the message body by logging it
   console.log("🟢 Receiving SQS message body:", message.Body);
@@ -148,7 +146,7 @@ const processImage = async (message) => {
         ContentType: `image/${format}`,
       })
       .promise();
-    console.log("🔹 new imagefile:", newFilename);
+    console.log("🟢 new imagefile:", newFilename);
 
     try {
       // Delete the processed message from the SQS queue

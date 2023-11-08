@@ -31,7 +31,6 @@ const handleGetPresignedUrl = async (req, res) => {
   const format = req.query.format;
   const client = new S3Client({ region: process.env.AWS_REGION });
   const key = `${uuidv4()}.${format}`;
-  console.log("🔹 PresignedUrl key:", key);
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
@@ -39,9 +38,9 @@ const handleGetPresignedUrl = async (req, res) => {
   });
 
   try {
-    const url = await getSignedUrl(client, command, { expiresIn: 300 }); // expires in 5 minutes
+    const url = await getSignedUrl(client, command, { expiresIn: 300 }); // * expires in 5 minutes
     console.log("🔹 Pre-signed URL generated:", url.slice(0, 100));
-    console.log("🔹 Key:", key);
+    console.log("🔹 Key(filename):", key);
     res.json({ key, url });
   } catch (error) {
     res.status(500).send(error);
@@ -81,7 +80,6 @@ const handlePostResult = async (req, res) => {
     let elapsedTime = 0;
 
     // Function to check if the processed image file exists in S3
-    // * change function name more suitable for this application
     const checkConversionEned = async () => {
       try {
         await s3
@@ -108,14 +106,6 @@ const handlePostResult = async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       elapsedTime += pollInterval;
     }
-    // const retrievedImage = await s3
-    //   .getObject({
-    //     Bucket: bucketName,
-    //     Key: filename,
-    //   })
-    //   .promise();
-
-    // const imageBase64 = retrievedImage.Body.toString("base64");
 
     // * Render the result
     res.json({
@@ -125,12 +115,6 @@ const handlePostResult = async (req, res) => {
       height,
       format,
     });
-    // res.render("result", {
-    //   pageTitle,
-    //   resultFilename: filename,
-    //   resultDimensions: `${width}x${height}`,
-    //   convertedImage: imageBase64, // Pass the image data to the view template
-    // });
   } catch (error) {
     console.error(`🔴 Post Result Error: ${error.message}`);
     res.render("error", {
@@ -142,10 +126,8 @@ const handlePostResult = async (req, res) => {
 
 const handleGetResult = async (req, res) => {
   console.log("🔹 handleGetResult req.query:", req.query);
-  // Get the desired image width, height, and format from a user
   const filename = req.query.key; // S3 Object Key
   const url = req.query.url; // S3 Object URL
-  // const newFilename = req.query.key.split(".")[0] + "." + req.query.format; // S3 Object Key
   const width = req.query.width;
   const height = req.query.height;
   console.log("🔹 filename:", filename);
@@ -166,7 +148,7 @@ const handleGetResult = async (req, res) => {
       resultFilename: filename,
       resultUrl: url,
       resultDimensions: `${width}x${height}`,
-      convertedImage: imageBase64, // Pass the image data to the view template
+      convertedImage: imageBase64, // Pass the image data to the "result" view template
     });
   } catch (error) {
     console.error(`🔴 Error: ${error.message}`);

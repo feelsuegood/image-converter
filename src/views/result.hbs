@@ -12,11 +12,7 @@
     </div>
 
     <!-- ! Download button -->
-    <a
-      {{!-- href="data:image/jpeg;base64,{{convertedImage}}" --}}
-      href="{{resultURL}}"
-      download={{resultFilename}}
-    >
+    <a href="{{resultURL}}" download={{resultFilename}}>
       <button class="btn btn-success btn-custom">Download Image</button>
     </a><p></p>
 
@@ -29,7 +25,7 @@
     <img
       class="converted-image"
       src="data:image/jpeg;base64,{{convertedImage}}"
-      alt="Uploaded Image"
+      alt="Converted Image"
     />
     <div class="container blank-section"></div>
   </div>
