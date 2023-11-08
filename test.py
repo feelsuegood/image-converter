@@ -1,6 +1,3 @@
-# 코드 정리하기
-# 주석 영어로 바꾸기
-
 import threading
 import requests
 import time
@@ -12,14 +9,15 @@ load_dotenv()
 
 
 url = os.getenv('URL_LB')
-COCURRENT_REQUESTS = 2  # Max concurrent requests
+
+CONCURRENT_REQUESTS = 1  # Max concurrent requests
+
 ITERATION_REQUESTS = 100000  # Number of iterations
 DELAY = 2  # Delay between requests in seconds
 TIMEOUT = 10  # POST request timeout in seconds
-RETRIES = 1  # Number of retries
 MAX_ITERATION = 100  # Max threads
 # Test maximum file size
-FILE = 'request/test-10mb.jpg'  # Image file for upload
+FILE = 'test-img/test-2mb.jpg'  # Image file for upload
 WIDTH = 1920  # Image width
 HEIGHT = 1080  # Image height
 FORMAT = 'JPEG'  # Image format
@@ -51,33 +49,32 @@ def perform_post(thread_number: int, total_threads: int) -> None:
     form_data = {'width': WIDTH,
                  'height': HEIGHT, 'format': FORMAT}
 
-    for _ in range(RETRIES):
-        try:
-            # Start timing the request
-            start_time = time.time()
+    try:
+        # Start timing the request
+        start_time = time.time()
 
-            # Open image file for POST request
-            with open(FILE, 'rb') as f:
-                files = {'image': (FILE, f, 'image/jpeg')}
-                response = requests.post(
-                    f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
+        # Open image file for POST request
+        with open(FILE, 'rb') as f:
+            files = {'image': (FILE, f, 'image/jpeg')}
+            response = requests.post(
+                f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
 
-            # Calculate elapsed time
-            elapsed_time = time.time() - start_time
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
 
-            # Print status and time
-            if response.status_code == 200:
-                thread_print(
-                    f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
-                return
-
+        # Print status and time
+        if response.status_code == 200:
             thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
+                f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
+            return
 
-        except (requests.exceptions.RequestException, FileNotFoundError) as e:
-            thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
-            time.sleep(2)
+        thread_print(
+            f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
+
+    except (requests.exceptions.RequestException, FileNotFoundError) as e:
+        thread_print(
+            f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
+        time.sleep(2)
 
 
 def main(thread_number: int, total_threads: int, num_iterations: int, delay: int) -> None:
@@ -105,6 +102,5 @@ def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, 
 
 
 if __name__ == "__main__":
-    # for _ in range(100):
     perform_multiple_requests(
-        COCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
+        CONCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
