@@ -20,6 +20,7 @@ const createS3bucket = async () => {
   // Define the addCorsConfiguration function
   const addCorsConfiguration = async () => {
     const client = new S3Client({ region: process.env.AWS_REGION });
+
     const corsCommand = new PutBucketCorsCommand({
       Bucket: bucketName,
       CORSConfiguration: {
@@ -103,72 +104,95 @@ const createQueue = async (queueName) => {
 // * call createQueue function
 createQueue(queueName);
 
-// * Poll the SQS queue for new messages
-const pollSQSQueue = async () => {
+// ! Handling the message and convert the image
+const processMessage = async (message) => {
+  // Check the message body by logging it
+  console.log("🟢 SQS message body:", message.Body);
+  // get the info from sqs message
+  const { filename, width, height, format, bucketName } = JSON.parse(
+    message.Body
+  );
+
+  // get the original image from s3
   const params = {
-    QueueUrl: sqsQueueUrl,
-    MaxNumberOfMessages: 1, // The number of messages to get for a one time
-    WaitTimeSeconds: 20, // Long Polling setting
+    Bucket: bucketName,
+    Key: filename,
   };
 
+  console.log("🟢 original image S3 getObject Params:", params);
+
+  try {
+    const getObjectResponse = await s3.getObject(params).promise();
+
+    // Check for empty or null response
+    if (!getObjectResponse.Body) {
+      throw new Error(`Failed to get object from S3: ${filename}`);
+    }
+
+    const imageBuffer = getObjectResponse.Body;
+
+    // Perform image converting
+    const processedBuffer = await sharp(imageBuffer)
+      .resize(width, height) // change the size
+      .toFormat(format) // Change the format
+      .toBuffer();
+
+    const newFilename = filename.split(".")[0] + "." + format;
+
+    // Upload the converted image to S3
+    await s3
+      .upload({
+        Bucket: bucketName,
+        Key: newFilename,
+        Body: processedBuffer,
+        ContentType: `image/${format}`,
+      })
+      .promise();
+    console.log("🟢 new imagefile:", newFilename);
+
+    try {
+      // Delete the processed message from the SQS queue
+      await sqs
+        .deleteMessage({
+          QueueUrl: process.env.AWS_SQS_URL,
+          ReceiptHandle: message.ReceiptHandle,
+        })
+        .promise();
+      console.log("🟢 Message Deleted Successfully");
+    } catch (error) {
+      console.log("🔴 Delete Error", error);
+    }
+  } catch (error) {
+    console.error("🔴 Error processing message:", error);
+  }
+};
+
+// * Poll the SQS queue for new messages
+const pollSQSQueue = async () => {
   while (true) {
     try {
-      const data = await sqs.receiveMessage(params).promise();
+      const { Messages } = await sqs
+        .receiveMessage({
+          QueueUrl: process.env.AWS_SQS_URL, // Use the environment variable
+          MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
+          WaitTimeSeconds: 5,
+        })
+        .promise();
 
-      if (data.Messages) {
-        for (const message of data.Messages) {
-          const body = JSON.parse(message.Body);
-          await processImage(body);
-
-          // Delete completed message from the queue
-          const deleteParams = {
-            QueueUrl: sqsQueueUrl,
-            ReceiptHandle: message.ReceiptHandle,
-          };
-          await sqs.deleteMessage(deleteParams).promise();
-        }
+      if (Messages && Messages.length > 0) {
+        // Process multiple messages in parallel
+        await Promise.all(
+          Messages.map(async (message) => {
+            await processMessage(message);
+          })
+        );
       }
-    } catch (err) {
-      console.error("Error processing message:", err);
+    } catch (error) {
+      console.error("🔴 SQS receiveMessage error:", error);
     }
   }
 };
 
-// * Handle SQS Part: Process the message and convert the image
-const processImage = async ({ key, width, height, format }) => {
-  try {
-    // Get image from S3
-    const originalImage = await s3
-      .getObject({ Bucket: bucketName, Key: key })
-      .promise();
-
-    // Image Conversion
-    const convertedImage = await sharp(originalImage.Body)
-      .resize(parseInt(width), parseInt(height))
-      .toFormat(format)
-      .toBuffer();
-
-    // Save the converted image back to S3
-    const newKey = key.split(".")[0] + `.${format}`;
-    await s3
-      .upload({
-        Bucket: bucketName,
-        Key: newKey,
-        Body: convertedImage,
-      })
-      .promise();
-
-    // 변환된 이미지의 URL 반환
-    const url = s3.getSignedUrl("getObject", {
-      Bucket: bucketName,
-      Key: newKey,
-      Expires: 60,
-    });
-    res.json({ url });
-  } catch (err) {
-    console.error("Error processing image:", err);
-  }
-};
-
-// ** Call "pollSQSQueue" function **
-pollSQSQueue();
+pollSQSQueue().catch((error) => {
+  console.error("🔴 SQS polling error:", error);
+});

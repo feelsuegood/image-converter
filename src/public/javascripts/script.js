@@ -7,108 +7,72 @@ async function uploadImage() {
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
 
-  //! delete later
-  console.log(fileInput.files[0]);
-  console.log(file);
-  console.log(width);
-  console.log(height);
-  console.log(format);
-
   if (!file) {
     alert("Please upload an image file.");
     return;
   }
 
   try {
-    // Request a pre-signed URL from the server
     const response = await fetch("/presigned-url");
-    console.log("response:", response.json);
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
     const data = await response.json();
+    data.width = width;
+    data.height = height;
+    data.format = format;
 
-    // Upload the file to S3 using the pre-signed URL
+    console.log("🟢data:", data);
     const uploadResponse = await fetch(data.url, {
       method: "PUT",
-      headers: {
-        "Content-Type": `image/${format}`,
-      },
+      headers: { "Content-Type": `image/${format}` },
       body: file,
     });
+    console.log("🟢uploadResponse:", uploadResponse);
+    console.log("🟢uploadResponse.ok:", uploadResponse.ok);
     if (!uploadResponse.ok) {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
-    // Set form data and send it to the server
-    const formData = new FormData(form);
-    formData.append("imageKey", data.key); // Add the key generated via pre-signed URL
-    formData.append("width", width); // Add width
-    formData.append("height", height); // Add height
-    formData.append("format", format); // Add format
 
-    // Send the conversion request
+    // ! Here starts problems
     const result = await fetch("/result", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": `application/json` },
+      body: JSON.stringify(data),
     });
 
-    // show the the result
-    const resultData = await result.json();
-    if (resultData.convertedImageUrl) {
-      // Display the image or provide a download link
-      const imageContainer = document.getElementById("imageContainer"); // 이미지를 표시할 컨테이너
-      imageContainer.innerHTML = `<img src="${resultData.convertedImageUrl}" alt="Converted Image"/>`;
-
-      // Optionally, provide a download link
-      imageContainer.innerHTML += `<a href="${resultData.convertedImageUrl}" download>Download Converted Image</a>`;
-    } else {
-      alert("Image conversion failed.");
-    }
+    console.log("🟢result", result);
+    console.log("🟢result.body", result.body);
+    // ! 이제 여기서부터 이미지 처리 될동안 기다리는 기능을 넣어야함!
   } catch (error) {
     console.error("Error:", error);
     alert(error.message);
   }
 }
 
-// Wait until the DOM is fully loaded
+// * Handle button clicks
 document.addEventListener("DOMContentLoaded", function () {
-  // Click event to 'cancelButton'
   document
     .getElementById("cancelButton")
     .addEventListener("click", function (e) {
-      // Prevent form submission
       e.preventDefault();
-
-      // Hide the 'processingText'
-      processingText.style.display = "none";
-
-      // Navigate to the root router
+      document.getElementById("processingText").style.display = "none";
       window.location.href = "/";
     });
 
-  // Set the image properties based on the button clicked
   function setImageProperties(width, height, format = "jpeg") {
     document.getElementById("width").value = width;
     document.getElementById("height").value = height;
     document.getElementById("format").value = format;
   }
 
-  // Event listeners for button clicks
   document
     .getElementById("instagramButton")
-    .addEventListener("click", function () {
-      setImageProperties(1080, 1080); // Instagram size
-    });
-
+    .addEventListener("click", () => setImageProperties(1080, 1080));
   document
     .getElementById("youtubeThumbnailButton")
-    .addEventListener("click", function () {
-      setImageProperties(1280, 720); // YouTube Thumbnail size
-    });
-
+    .addEventListener("click", () => setImageProperties(1280, 720));
   document
     .getElementById("linkedinProfileButton")
-    .addEventListener("click", function () {
-      setImageProperties(400, 400); // LinkedIn Profile size
-    });
+    .addEventListener("click", () => setImageProperties(400, 400));
 });
