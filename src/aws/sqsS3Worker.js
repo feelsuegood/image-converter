@@ -11,20 +11,55 @@ const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 const queueName = process.env.AWS_SQS_QUEUE_NAME;
+const sqsQueueUrl = process.env.AWS_SQS_URL;
 
 // * Create the S3 bucket in SQS queue
-async function createS3bucket() {
+const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
+
+const createS3bucket = async () => {
+  // Define the addCorsConfiguration function
+  const addCorsConfiguration = async () => {
+    const client = new S3Client({ region: process.env.AWS_REGION });
+    const corsCommand = new PutBucketCorsCommand({
+      Bucket: bucketName,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedHeaders: ["*"],
+            AllowedMethods: ["GET", "POST", "PUT", "DELETE", "HEAD"],
+            AllowedOrigins: ["*"],
+          },
+        ],
+      },
+    });
+
+    try {
+      await client.send(corsCommand);
+      console.log(`CORS configuration added to the bucket: ${bucketName}`);
+    } catch (error) {
+      console.error(`Error adding CORS configuration: ${error}`);
+    }
+  };
+
   try {
     await s3.createBucket({ Bucket: bucketName }).promise();
     console.log(`🟢 Created bucket: ${bucketName}`);
   } catch (err) {
     if (err.statusCode === 409) {
-      console.log(`🟡 Bucket "${bucketName}" already exists`);
+      console.log(
+        `🟡 Bucket "${bucketName}" already exists. Updating CORS configuration.`
+      );
     } else {
       console.log(`🔴 Error creating bucket: ${err}`);
+      return; // Stop further execution in case of errors other than bucket already exists
     }
   }
-}
+
+  // Apply or update CORS configuration
+  await addCorsConfiguration();
+};
+
+// createS3bucket();
 
 // * Call createS3bucket function
 (async () => {

@@ -40,7 +40,7 @@ const handleGetPresignedUrl = async (req, res) => {
 
   try {
     const url = await s3.getSignedUrlPromise("putObject", params);
-    res.json({ key, url });
+    res.render("result", { key, url });
   } catch (error) {
     res.status(500).send(error);
   }

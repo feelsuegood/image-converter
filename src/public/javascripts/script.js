@@ -1,84 +1,4 @@
-// // Wait until the DOM is fully loaded
-// document.addEventListener("DOMContentLoaded", function () {
-//   const form = document.querySelector("form");
-//   // Get references to the form and the processing text
-//   const processingText = document.getElementById("processingText");
-
-//   form.addEventListener("submit", function (e) {
-//     // Prevent the default form submission
-//     e.preventDefault();
-
-//     // Get reference to the file input element
-//     const fileInput = document.getElementById("image");
-//     const submitButton = form.querySelector("#submitButton"); // Get the submit button within the form
-
-//     // Check if any file is uploaded
-//     if (fileInput.files.length === 0) {
-//       console.log("No file uploaded"); // Log the error message
-//       alert("Please upload an image file.");
-//       return;
-//     }
-//     // Submit the form
-//     form.submit();
-//     // Disable the submit button
-//     submitButton.disabled = true;
-//     // Display the processingText
-//     processingText.style.display = "block";
-//     // Scroll through the screen to processingText.
-//     setTimeout(function () {
-//       processingText.scrollIntoView({ behavior: "smooth" });
-//     }, 100);
-//     // Display an alert message after a certain period of time and direct home page
-//     setTimeout(function () {
-//       alert("Please try again");
-//       submitButton.disabled = false;
-//       window.location.href = "/";
-//     }, 10000);
-//   });
-
-//   // Click event to 'cancelButton'
-//   document
-//     .getElementById("cancelButton")
-//     .addEventListener("click", function (e) {
-//       // Prevent form submission
-//       e.preventDefault();
-
-//       // Hide the 'processingText'
-//       processingText.style.display = "none";
-
-//       // Navigate to the root router
-//       window.location.href = "/";
-//     });
-
-//   // Set the image properties based on the button clicked
-//   function setImageProperties(width, height, format = "jpeg") {
-//     document.getElementById("width").value = width;
-//     document.getElementById("height").value = height;
-//     document.getElementById("format").value = format;
-//   }
-
-//   // Event listeners for button clicks
-//   document
-//     .getElementById("instagramButton")
-//     .addEventListener("click", function () {
-//       setImageProperties(1080, 1080); // Instagram size
-//     });
-
-//   document
-//     .getElementById("youtubeThumbnailButton")
-//     .addEventListener("click", function () {
-//       setImageProperties(1280, 720); // YouTube Thumbnail size
-//     });
-
-//   document
-//     .getElementById("linkedinProfileButton")
-//     .addEventListener("click", function () {
-//       setImageProperties(400, 400); // LinkedIn Profile size
-//     });
-// });
-
-// autofill 설정 나중에 해야함! 인스타그램, 유튜브, 링크드인 사진 사이즈에 맞게 설정해야함
-// JavaScript로 pre-signed URL 요청 및 이미지 업로드
+// JavaScript for requesting a pre-signed URL and uploading an image
 async function uploadImage() {
   const form = document.getElementById("uploadForm");
   const fileInput = document.getElementById("image");
@@ -88,16 +8,16 @@ async function uploadImage() {
   const format = document.getElementById("format").value;
 
   if (!file) {
-    alert("Please upload a image file.");
+    alert("Please upload an image file.");
     return;
   }
 
   try {
-    // 서버로부터 pre-signed URL 요청
+    // Request a pre-signed URL from the server
     const response = await fetch("/get-presigned-url");
     const data = await response.json();
 
-    // pre-signed URL을 이용해 S3에 파일 업로드
+    // Upload the file to S3 using the pre-signed URL
     await fetch(data.url, {
       method: "PUT",
       headers: {
@@ -106,22 +26,51 @@ async function uploadImage() {
       body: file,
     });
 
-    // 폼 데이터 설정 및 서버에 전송
+    // Set form data and send it to the server
     const formData = new FormData(form);
-    formData.append("imageKey", data.key); // pre-signed URL을 통해 생성된 키 추가
-    formData.append("width", width); // 파일 확장자 추가
-    formData.append("height", height); // 파일 확장자 추가
-    formData.append("format", format); // 파일 확장자 추가
+    formData.append("imageKey", data.key); // Add the key generated via pre-signed URL
+    formData.append("width", width); // Add width
+    formData.append("height", height); // Add height
+    formData.append("format", format); // Add format
 
-    // 변환 요청 전송
+    // Send the conversion request
     const result = await fetch("/result", {
       method: "POST",
       body: formData,
     });
 
-    // 결과 처리
+    // Process the result
     // ...
   } catch (error) {
     console.error("Error:", error);
   }
 }
+
+// Wait until the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", function () {
+  // Set the image properties based on the button clicked
+  function setImageProperties(width, height, format = "jpeg") {
+    document.getElementById("width").value = width;
+    document.getElementById("height").value = height;
+    document.getElementById("format").value = format;
+  }
+
+  // Event listeners for button clicks
+  document
+    .getElementById("instagramButton")
+    .addEventListener("click", function () {
+      setImageProperties(1080, 1080); // Instagram size
+    });
+
+  document
+    .getElementById("youtubeThumbnailButton")
+    .addEventListener("click", function () {
+      setImageProperties(1280, 720); // YouTube Thumbnail size
+    });
+
+  document
+    .getElementById("linkedinProfileButton")
+    .addEventListener("click", function () {
+      setImageProperties(400, 400); // LinkedIn Profile size
+    });
+});
