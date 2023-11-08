@@ -1,15 +1,24 @@
 // JavaScript for requesting a pre-signed URL and uploading an image
 async function uploadImage() {
-  const fileInput = document.getElementById("image");
-  const file = fileInput.files[0];
   const width = document.getElementById("width").value;
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
-
+  const fileInput = document.getElementById("image");
+  const file = fileInput.files[0];
+  // check if all fields are filled
   if (!file || !width || !height) {
     alert("Please fill all items in the form.");
     return;
   }
+  // check max file size
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const fileSize = file.size;
+  if (fileSize > maxSize) {
+    alert("Maximum image file size is 10MB.");
+    window.location.href = "/";
+    return;
+  }
+
   document.body.classList.add("loading");
   document.getElementById("loadingIndicator").style.display = "block";
 

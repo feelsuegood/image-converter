@@ -1,106 +1,104 @@
-import threading
 import requests
-import time
 import os
-from typing import Any
+import concurrent.futures
 from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-
 url = os.getenv('URL_LB')
+# Get the pre-signed URL from the server
 
-CONCURRENT_REQUESTS = 1  # Max concurrent requests
 
-ITERATION_REQUESTS = 100000  # Number of iterations
-DELAY = 2  # Delay between requests in seconds
-TIMEOUT = 10  # POST request timeout in seconds
-MAX_ITERATION = 100  # Max threads
+MAX_WORKERS = 3  # Max concurrent requests
+
+TIME = 100000  # Number of iterations
 # Test maximum file size
-FILE = 'test-img/test-2mb.jpg'  # Image file for upload
+FILE_PATH = 'test-img/test-10mb.jpg'  # Image file for upload
 WIDTH = 1920  # Image width
 HEIGHT = 1080  # Image height
-FORMAT = 'JPEG'  # Image format
+FORMAT = 'jpeg'  # Image format
 
 
-def thread_print(*args: Any, **kwargs: Any) -> None:
-    """Thread-safe print function."""
-    with threading.Lock():
-        print(*args, **kwargs)
+def get_presigned_url(format):
+    response = requests.get(
+        f"{url}presigned-url?format={format}")
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
+
+# Upload the image to the pre-signed URL
 
 
-def perform_get(thread_number: int, total_threads: int) -> None:
-    """Perform a GET request."""
-    try:
-        response = requests.get(url, timeout=TIMEOUT)
+def upload_image_to_s3(file_path, upload_data):
+    with open(file_path, 'rb') as file:
+        files = {'file': (file_path, file)}
+        headers = {'Content-Type': f"image/{upload_data['format']}"}
+        response = requests.put(upload_data['url'], data=file, headers=headers)
         if response.status_code == 200:
-            thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🔹 GET Successful')
+            print("🟢 Upload successful")
         else:
-            thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🔴 GET Failed: {response.status_code}')
-    except requests.exceptions.RequestException as e:
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🟡 GET Error: {e}')
+            response.raise_for_status()
+
+# Send the image processing request
 
 
-def perform_post(thread_number: int, total_threads: int) -> None:
-    """Perform a POST request with image upload."""
-    form_data = {'width': WIDTH,
-                 'height': HEIGHT, 'format': FORMAT}
+def process_image(upload_data):
+    payload = {
+        'key': upload_data['key'],
+        'url': upload_data['url'],
+        'width': upload_data['width'],
+        'height': upload_data['height'],
+        'format': upload_data['format']
+    }
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(f"{url}result",
+                             json=payload, headers=headers)
+    if response.status_code == 200:
+        print("🟢 key(filename)")
+        return response.json().get('key')
+    else:
+        response.raise_for_status()
+# Main function to handle the upload process
+
+
+def main():
+    # Example values
+    width = WIDTH
+    height = HEIGHT
+    format = FORMAT
+    file_path = FILE_PATH
 
     try:
-        # Start timing the request
-        start_time = time.time()
+        # Get the pre-signed URL
+        upload_data = get_presigned_url(format)
+        upload_data['width'] = width
+        upload_data['height'] = height
+        upload_data['format'] = format
 
-        # Open image file for POST request
-        with open(FILE, 'rb') as f:
-            files = {'image': (FILE, f, 'image/jpeg')}
-            response = requests.post(
-                f"{url}result", data=form_data, files=files, timeout=TIMEOUT)
+        # Upload the image
+        upload_image_to_s3(file_path, upload_data)
 
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
+        # Process the image
+        result = process_image(upload_data)
+        print(result)
 
-        # Print status and time
-        if response.status_code == 200:
-            thread_print(
-                f'🧵 Thread {thread_number}/{total_threads} - 🟢 POST Successful, Time elapsed: {elapsed_time:.2f} seconds')
-            return
-
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🔴 POST Failed: {response.status_code}, Time elapsed: {elapsed_time:.2f} seconds')
-
-    except (requests.exceptions.RequestException, FileNotFoundError) as e:
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - 🟡 POST Error: {e}')
-        time.sleep(2)
+    except requests.exceptions.RequestException as e:
+        print(e)
 
 
-def main(thread_number: int, total_threads: int, num_iterations: int, delay: int) -> None:
-    """Main function to run GET and POST requests for each thread."""
-    for i in range(num_iterations):
-        thread_print(
-            f'🧵 Thread {thread_number}/{total_threads} - ➡️   Iteration {i+1}/{num_iterations}')
-        # perform_get(thread_number, total_threads)
-        # time.sleep(delay)
-        perform_post(thread_number, total_threads)
-        time.sleep(delay)
-
-
-def perform_multiple_requests(num_threads: int, num_iterations_per_thread: int, delay: int) -> None:
-    """Run multiple threads to perform requests."""
-    threads = []
-    for i in range(min(MAX_ITERATION, num_threads)):
-        thread = threading.Thread(target=main, args=(
-            i+1, num_threads, num_iterations_per_thread, delay))
-        threads.append(thread)
-        thread.start()
-
-    for thread in threads:
-        thread.join()
+# 병렬 실행과 반복을 관리하는 함수
+def run_in_parallel(times, max_workers):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # main 함수를 times 횟수만큼 실행하도록 예약
+        futures = {executor.submit(main) for _ in range(times)}
+        # 완료될 때까지 기다리고 결과를 반환
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # 결과(에러가 있다면 여기서 예외가 발생함)
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
-    perform_multiple_requests(
-        CONCURRENT_REQUESTS, ITERATION_REQUESTS, DELAY)
+    run_in_parallel(times=TIME, max_workers=MAX_WORKERS)
