@@ -107,7 +107,7 @@ createQueue(queueName);
 // ! Handling the message and convert the image
 const processMessage = async (message) => {
   // Check the message body by logging it
-  console.log("🟢 SQS message body:", message.Body);
+  console.log("📥 SQS message body:", message.Body);
   // get the info from sqs message
   const { filename, width, height, format, bucketName } = JSON.parse(
     message.Body
@@ -148,7 +148,7 @@ const processMessage = async (message) => {
         ContentType: `image/${format}`,
       })
       .promise();
-    console.log("🟢 new imagefile:", newFilename);
+    console.log("🆕 new imagefile:", newFilename);
 
     try {
       // Delete the processed message from the SQS queue

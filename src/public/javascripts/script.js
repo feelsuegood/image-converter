@@ -7,8 +7,8 @@ async function uploadImage() {
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
 
-  if (!file) {
-    alert("Please upload an image file.");
+  if (!file || !width || !height) {
+    alert("Please fill all items.");
     return;
   }
 
@@ -21,7 +21,6 @@ async function uploadImage() {
     data.width = width;
     data.height = height;
     data.format = format;
-
     console.log("🟢data:", data);
     const uploadResponse = await fetch(data.url, {
       method: "PUT",
@@ -34,16 +33,20 @@ async function uploadImage() {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
 
-    // ! Here starts problems
-    const result = await fetch("/result", {
+    const resultResponse = await fetch("/result", {
       method: "POST",
-      headers: { "Content-Type": `application/json` },
-      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: data.key, width, height, format }),
     });
-
-    console.log("🟢result", result);
-    console.log("🟢result.body", result.body);
-    // ! 이제 여기서부터 이미지 처리 될동안 기다리는 기능을 넣어야함!
+    if (resultResponse.ok) {
+      window.location.href = `/result?key=${encodeURIComponent(
+        data.key
+      )}&format=${encodeURIComponent(format)}&width=${encodeURIComponent(
+        width
+      )}&height=${encodeURIComponent(height)}`;
+    } else {
+      throw new Error(`Error in image processing: ${resultResponse.status}`);
+    }
   } catch (error) {
     console.error("Error:", error);
     alert(error.message);
