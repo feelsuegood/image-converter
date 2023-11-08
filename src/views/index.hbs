@@ -11,7 +11,13 @@
   </div>
   <div class="container">
     <!-- * Form for uploading and converting image -->
-    <form action="/result" method="post" enctype="multipart/form-data">
+    <form
+      id="uploadForm"
+      method="post"
+      action="/result"
+      enctype="multipart/form-data"
+    >
+      {{! <form id="uploadForm" method="post"> 나중에 이 코드 써야할 수도 있음}}
       <label for="image">Select Image:</label>
       <input type="file" name="image" id="image" accept="image/*" />
       <br />
@@ -78,7 +84,8 @@
       <button
         class="btn btn-inverse btn-custom"
         id="submitButton"
-        type="submit"
+        type="button"
+        onclick="uploadImage()"
       >Convert Image</button>
       <p></p>
 
@@ -88,9 +95,9 @@
         class="btn btn-inverse btn-custom"
       >Cancel</button>
     </form>
-
-    <!-- * Text that appears while image is being processed -->
-    <p class="notification" id="processingText">Processing...</p>
-    <br />
+  </div>
+  <!-- Loading message -->
+  <div id="loadingIndicator">
+    Loading...
   </div>
 </div>

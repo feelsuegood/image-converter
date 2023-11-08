@@ -2,10 +2,9 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const AWS = require("aws-sdk");
-const multer = require("multer");
-const path = require("path");
-const multerS3 = require("multer-s3"); // Must use multer-s3@2.10.0
 const { v4: uuidv4 } = require("uuid");
+const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 // * Initialize AWS services
 const s3 = new AWS.S3();
@@ -15,34 +14,8 @@ const bucketName = process.env.AWS_S3_BUCKET_NAME;
 
 const pageTitle = "Image Converter";
 const fileSize = 10; // * file size limit: 10MB
-const maxWidth = 1920;
-const maxHeight = 1080;
-
-// * Set up Multer file filter configuration
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/gif", "image/webp"];
-  if (!allowedTypes.includes(file.mimetype)) {
-    cb(new Error("Only JPEG, GIF, and WEBP types are allowed!"), false);
-  } else {
-    cb(null, true);
-  }
-};
-
-// * Setup Multer with S3 configuration
-const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: bucketName,
-    metadata: function (req, file, cb) {
-      cb(null, { fieldName: file.fieldname });
-    },
-    key: function (req, file, cb) {
-      cb(null, uuidv4() + path.extname(file.originalname));
-    },
-  }),
-  fileFilter: fileFilter,
-  limits: { fileSize: fileSize * 1024 * 1024 },
-});
+const maxWidth = 1920; // * image width limit: 1920px
+const maxHeight = 1080; //  * image height limit: 1080px
 
 // * Handle main page rendering
 const handleHome = (req, res) => {
@@ -53,48 +26,68 @@ const handleHome = (req, res) => {
     maxHeight,
   });
 };
+// * call-back function that generates pre-signed URL
+const handleGetPresignedUrl = async (req, res) => {
+  const format = req.query.format;
+  const client = new S3Client({ region: process.env.AWS_REGION });
+  const key = `${uuidv4()}.${format}`;
+  console.log("🔹 PresignedUrl key:", key);
 
-// * handle image conversion rendering
-const handleConvert = async (req, res) => {
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  });
+
+  try {
+    const url = await getSignedUrl(client, command, { expiresIn: 300 }); // expires in 5 minutes
+    console.log("🔹 Pre-signed URL generated:", url.slice(0, 100));
+    console.log("🔹 Key:", key);
+    res.json({ key, url });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+};
+
+const handlePostResult = async (req, res) => {
+  console.log("🔹 handleResult req.body:", req.body);
   // Get the desired image width, height, and format from a user
-  const desiredWidth = parseInt(req.body.width, 10);
-  const desiredHeight = parseInt(req.body.height, 10);
-  const desiredFormat = req.body.format.toLowerCase();
-  const originalFilename = req.file.key;
-  const newFilename = req.file.key.split(".")[0] + "." + desiredFormat; // S3 Object Key
+  const width = parseInt(req.body.width, 10);
+  const height = parseInt(req.body.height, 10);
+  const format = req.body.format;
+  const filename = req.body.key;
+  const url = req.body.url;
 
   // * Create a message to send to the SQS queue with relevant information
   const messageParams = {
-    QueueUrl: process.env.AWS_SQS_URL, // Replace with your actual SQS queue URL
+    QueueUrl: process.env.AWS_SQS_URL,
     MessageBody: JSON.stringify({
-      filename: originalFilename,
-      width: desiredWidth,
-      height: desiredHeight,
-      format: desiredFormat,
-      bucketName: bucketName,
+      filename,
+      width,
+      height,
+      format,
+      bucketName,
     }),
   };
-
-  // ! Related to SQS queue processing
+  // * handle image conversion rendering - sening message to SQS
   try {
     // Send the message to the SQS queue
-    console.log("🟢 Sending message to queue...");
     await sqs.sendMessage(messageParams).promise();
-    console.log("📤 SQS message body:", messageParams.MessageBody);
+    console.log("🔹 Sending SQS message body:", messageParams.MessageBody);
 
     // Wait for the SQS job to complete
-    console.log("🟢 Waiting for message from queue...");
+    console.log("🔹 Waiting for message from queue...");
     const maxWaitTime = 10000; // Maximum wait time (10 seconds)
     const pollInterval = 1000; // Polling interval (1 second)
     let elapsedTime = 0;
 
     // Function to check if the processed image file exists in S3
-    const checkComplete = async () => {
+    // * change function name more suitable for this application
+    const checkConversionEned = async () => {
       try {
         await s3
           .getObject({
             Bucket: bucketName,
-            Key: newFilename,
+            Key: filename,
           })
           .promise();
 
@@ -106,7 +99,7 @@ const handleConvert = async (req, res) => {
     };
 
     while (elapsedTime < maxWaitTime) {
-      const conditionMet = await checkComplete();
+      const conditionMet = await checkConversionEned();
       if (conditionMet) {
         break; // Exit the loop if the condition is met
       }
@@ -115,27 +108,31 @@ const handleConvert = async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       elapsedTime += pollInterval;
     }
+    // const retrievedImage = await s3
+    //   .getObject({
+    //     Bucket: bucketName,
+    //     Key: filename,
+    //   })
+    //   .promise();
 
-    // Get the converted image from S3
-    const retrievedImage = await s3
-      .getObject({
-        Bucket: bucketName,
-        Key: newFilename,
-      })
-      .promise();
+    // const imageBase64 = retrievedImage.Body.toString("base64");
 
-    const imageBase64 = retrievedImage.Body.toString("base64");
-
-    // Render the result
-    res.render("result", {
-      pageTitle,
-      resultFilename: newFilename,
-      resultDimensions: `${desiredWidth}x${desiredHeight}`,
-      convertedImage: imageBase64, // Pass the image data to the view template
-      fileSize,
+    // * Render the result
+    res.json({
+      key: filename,
+      url,
+      width,
+      height,
+      format,
     });
+    // res.render("result", {
+    //   pageTitle,
+    //   resultFilename: filename,
+    //   resultDimensions: `${width}x${height}`,
+    //   convertedImage: imageBase64, // Pass the image data to the view template
+    // });
   } catch (error) {
-    console.error(`🔴 Error(controller): ${error.message}`);
+    console.error(`🔴 Post Result Error: ${error.message}`);
     res.render("error", {
       pageTitle,
       result: `Error uploading to S3: ${error.message}`,
@@ -143,5 +140,47 @@ const handleConvert = async (req, res) => {
   }
 };
 
+const handleGetResult = async (req, res) => {
+  console.log("🔹 handleGetResult req.query:", req.query);
+  // Get the desired image width, height, and format from a user
+  const filename = req.query.key; // S3 Object Key
+  const url = req.query.url; // S3 Object URL
+  // const newFilename = req.query.key.split(".")[0] + "." + req.query.format; // S3 Object Key
+  const width = req.query.width;
+  const height = req.query.height;
+  console.log("🔹 filename:", filename);
+  // Get the converted image from S3
+  try {
+    const retrievedImage = await s3
+      .getObject({
+        Bucket: bucketName,
+        Key: filename,
+      })
+      .promise();
+
+    const imageBase64 = retrievedImage.Body.toString("base64");
+
+    // * Render the result
+    res.render("result", {
+      pageTitle,
+      resultFilename: filename,
+      resultUrl: url,
+      resultDimensions: `${width}x${height}`,
+      convertedImage: imageBase64, // Pass the image data to the view template
+    });
+  } catch (error) {
+    console.error(`🔴 Error: ${error.message}`);
+    res.render("error", {
+      pageTitle: "Error",
+      message: `Error retrieving converted image: ${error.message}`,
+    });
+  }
+};
+
 // Export callback function to router
-module.exports = { handleHome, upload, handleConvert };
+module.exports = {
+  handleHome,
+  handleGetPresignedUrl,
+  handlePostResult,
+  handleGetResult,
+};
