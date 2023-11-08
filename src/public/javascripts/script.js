@@ -71,27 +71,42 @@ async function uploadImage() {
 }
 
 // * Handle button clicks
+
 document.addEventListener("DOMContentLoaded", function () {
-  document
-    .getElementById("cancelButton")
-    .addEventListener("click", function (e) {
+  const cancelButton = document.getElementById("cancelButton");
+  if (cancelButton) {
+    cancelButton.addEventListener("click", function (e) {
       e.preventDefault();
       window.location.href = "/";
     });
+  }
 
   function setImageProperties(width, height, format = "jpeg") {
     document.getElementById("width").value = width;
     document.getElementById("height").value = height;
     document.getElementById("format").value = format;
   }
+  const instagramButton = document.getElementById("instagramButton");
+  const youtubeThumbnailButton = document.getElementById(
+    "youtubeThumbnailButton"
+  );
+  const linkedinProfileButton = document.getElementById(
+    "linkedinProfileButton"
+  );
 
-  document
-    .getElementById("instagramButton")
-    .addEventListener("click", () => setImageProperties(1080, 1080));
-  document
-    .getElementById("youtubeThumbnailButton")
-    .addEventListener("click", () => setImageProperties(1280, 720));
-  document
-    .getElementById("linkedinProfileButton")
-    .addEventListener("click", () => setImageProperties(400, 400));
+  if (instagramButton) {
+    instagramButton.addEventListener("click", () =>
+      setImageProperties(1080, 1080)
+    );
+  }
+  if (youtubeThumbnailButton) {
+    youtubeThumbnailButton.addEventListener("click", () =>
+      setImageProperties(1280, 720)
+    );
+  }
+  if (linkedinProfileButton) {
+    linkedinProfileButton.addEventListener("click", () =>
+      setImageProperties(400, 400)
+    );
+  }
 });
