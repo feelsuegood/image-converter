@@ -141,18 +141,22 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-document
-  .getElementById("downloadButton")
-  .addEventListener("click", function () {
-    const url = document
-      .getElementById("downloadButton")
-      .getAttribute("data-url");
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = document
-      .getElementById("downloadButton")
-      .getAttribute("data-name");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  });
+// * Handle download button click on result page
+const downloadButton = document.getElementById("downloadButton");
+if (downloadButton) {
+  document
+    .getElementById("downloadButton")
+    .addEventListener("click", function () {
+      const url = document
+        .getElementById("downloadButton")
+        .getAttribute("data-url");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = document
+        .getElementById("downloadButton")
+        .getAttribute("data-name");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+}
