@@ -4,19 +4,37 @@ async function uploadImage() {
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
   const fileInput = document.getElementById("image");
+  // * set the file input accept attribute to the selected image type
   const file = fileInput.files[0];
   // check if all fields are filled
-  if (!file || !width || !height) {
-    alert("Please fill all items in the form.");
+  if (!file) {
+    alert("Please upload an image file.");
+    return;
+  } else if (!width) {
+    alert("Please enter the width.");
+    return;
+  } else if (!height) {
+    alert("Please enter the height.");
     return;
   }
   // check max file size
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 10 * 1024 * 1024; // * image file size limit: 10MB
+  const maxWidth = 1920; // * image width limit: 1920px
+  const maxHeight = 1080; //  * image height limit: 1080px
+
   const fileSize = file.size;
   if (fileSize > maxSize) {
-    alert("Maximum image file size is 10MB.");
-    window.location.href = "/";
+    alert("The maximum image file size is 10MB.");
+    fileInput.value = ""; // reset the input
     return;
+  }
+  if (width > maxWidth || width <= 0) {
+    alert("The width should be between 1 and 1920px.");
+    width = ""; // reset the input
+  }
+  if (height > maxHeight || height <= 0) {
+    alert("The height should be between 1 and 1080px.");
+    height = ""; // reset the input
   }
 
   document.body.classList.add("loading");
@@ -56,15 +74,18 @@ async function uploadImage() {
         format,
       }),
     });
+    console.log(resultResponse);
+    const resultData = await resultResponse.json();
+    console.log(resultData);
     // * Redirect to the result page
     if (resultResponse.ok) {
       window.location.href = `/result?key=${encodeURIComponent(
-        data.key
-      )}&url=${encodeURIComponent(data.url)}&format=${encodeURIComponent(
-        format
-      )}&width=${encodeURIComponent(width)}&height=${encodeURIComponent(
-        height
-      )}`;
+        resultData.key
+      )}&url=${encodeURIComponent(resultData.url)}&format=${encodeURIComponent(
+        resultData.format
+      )}&width=${encodeURIComponent(
+        resultData.width
+      )}&height=${encodeURIComponent(resultData.height)}`;
     } else {
       throw new Error(`Error in image processing: ${resultResponse.status}`);
     }
@@ -119,3 +140,23 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   }
 });
+
+// * Handle download button click on result page
+const downloadButton = document.getElementById("downloadButton");
+if (downloadButton) {
+  document
+    .getElementById("downloadButton")
+    .addEventListener("click", function () {
+      const url = document
+        .getElementById("downloadButton")
+        .getAttribute("data-url");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = document
+        .getElementById("downloadButton")
+        .getAttribute("data-name");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+}
