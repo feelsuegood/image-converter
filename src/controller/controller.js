@@ -12,6 +12,8 @@ const {
   getSignedUrl,
   S3RequestPresigner,
 } = require("@aws-sdk/s3-request-presigner");
+const fs = require("fs").promises;
+
 const { fromIni } = require("@aws-sdk/credential-providers");
 const { HttpRequest } = require("@smithy/protocol-http");
 const { parseUrl } = require("@smithy/url-parser");
@@ -128,12 +130,15 @@ const handlePostResult = async (req, res) => {
     const command = new GetObjectCommand({
       Bucket: bucketName,
       Key: convertedFilename,
+      ContentDisposition: "attachment",
     });
 
     const downloadUrl = await getSignedUrl(client, command, {
       expiresIn: 300,
+      ContentDisposition: "attachment",
     }); // * expires in 5 minutes
-    console.log("🟢 Download URL:", downloadUrl.slice(0, 100));
+
+    console.log("🟢 Download URL:", downloadUrl);
     console.log("🔹 Key(filename):", convertedFilename);
 
     // * Render the result

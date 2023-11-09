@@ -12,15 +12,28 @@
     </div>
 
     <!-- ! Download button -->
-    {{!-- <a href="{{resultURL}}" download={{resultUrl}}> --}}
+    {{!-- <a
+      href="data:image/jpeg;base64,{{convertedImage}}"
+      download={{resultFilename}}
+    >
+      <button class="btn btn-success btn-custom">Download Image</button>
+    </a><p></p> --}}
+
+    {{!-- <a href="{{resultUrl}}" download="{{resultFilename}}"> --}}
     <button
       class="btn btn-success btn-custom"
       id="downloadButton"
-      data-url={{resultUrl}}
-      data-name={{resultFilename}}
-    >Download Image</button>
-    {{! </a> }}
-    <p></p>
+      data-url="{{resultUrl}}"
+      data-filename="{{resultFilename}}"
+    >Test Download Image</button>
+    {{! </a><p></p> }}
+
+    {{!-- <a
+      href="{{resultUrl}}"
+      download="{{resultFilename}}"
+      data-url="{{resultUrl}}"
+      data-filename="{{resultFilename}}"
+    >Download File</a><p></p> --}}
 
     <!-- Go Home Button -->
     <a href="/">
@@ -28,11 +41,7 @@
     <div class="container blank-section"></div>
 
     <!-- * Display the converted image -->
-    <img
-      class="converted-image"
-      src="data:image/jpeg;base64,{{convertedImage}}"
-      alt="Converted Image"
-    />
+    <img class="converted-image" src="{{resultUrl}}" alt="Converted Image" />
     <div class="container blank-section"></div>
   </div>
 </div>

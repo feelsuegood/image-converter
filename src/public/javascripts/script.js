@@ -150,13 +150,43 @@ if (downloadButton) {
       const url = document
         .getElementById("downloadButton")
         .getAttribute("data-url");
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = document
+      const filename = document
         .getElementById("downloadButton")
-        .getAttribute("data-name");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        .getAttribute("data-filename");
+
+      async function downloadFile(url) {
+        try {
+          // S3에서 이미지를 가져옴
+          const response = await fetch(url, { mode: "cors" });
+          if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+
+          // 응답 데이터를 Blob으로 변환
+          const blob = await response.blob();
+
+          // Blob 데이터로부터 URL 생성
+          const blobUrl = window.URL.createObjectURL(blob);
+
+          // 가상의 링크 생성
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = filename; // 여기에 원하는 파일 이름 지정
+
+          // 링크를 클릭하여 다운로드
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Blob URL 해제
+          window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+          console.error("Download failed:", error);
+        }
+      }
+
+      // 서버에서 생성한 사전 서명된 URL
+      const signedUrl = url;
+
+      // 파일 다운로드 실행
+      downloadFile(signedUrl);
     });
 }

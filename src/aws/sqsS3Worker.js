@@ -142,12 +142,14 @@ const processImage = async (message) => {
     const convertedFilename = "converted_" + filename;
 
     // * upload the converted image to s3
+    // !!! check check download 창 얘 덕분에 뜨는듯
     await s3
       .upload({
         Bucket: bucketName,
         Key: convertedFilename,
         Body: processedBuffer,
         ContentType: `image/${format}`,
+        ContentDisposition: `attachment; filename="${convertedFilename}"`,
       })
       .promise();
 
