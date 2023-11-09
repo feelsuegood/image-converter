@@ -12,9 +12,15 @@
     </div>
 
     <!-- ! Download button -->
-    <a href="{{resultURL}}" download={{resultFilename}}>
-      <button class="btn btn-success btn-custom">Download Image</button>
-    </a><p></p>
+    {{!-- <a href="{{resultURL}}" download={{resultUrl}}> --}}
+    <button
+      class="btn btn-success btn-custom"
+      id="downloadButton"
+      data-url={{resultUrl}}
+      data-name={{resultFilename}}
+    >Download Image</button>
+    {{! </a> }}
+    <p></p>
 
     <!-- Go Home Button -->
     <a href="/">

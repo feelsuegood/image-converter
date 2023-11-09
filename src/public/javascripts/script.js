@@ -74,15 +74,18 @@ async function uploadImage() {
         format,
       }),
     });
+    console.log(resultResponse);
+    const resultData = await resultResponse.json();
+    console.log(resultData);
     // * Redirect to the result page
     if (resultResponse.ok) {
       window.location.href = `/result?key=${encodeURIComponent(
-        data.key
-      )}&url=${encodeURIComponent(data.url)}&format=${encodeURIComponent(
-        format
-      )}&width=${encodeURIComponent(width)}&height=${encodeURIComponent(
-        height
-      )}`;
+        resultData.key
+      )}&url=${encodeURIComponent(resultData.url)}&format=${encodeURIComponent(
+        resultData.format
+      )}&width=${encodeURIComponent(
+        resultData.width
+      )}&height=${encodeURIComponent(resultData.height)}`;
     } else {
       throw new Error(`Error in image processing: ${resultResponse.status}`);
     }
@@ -137,3 +140,19 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   }
 });
+
+document
+  .getElementById("downloadButton")
+  .addEventListener("click", function () {
+    const url = document
+      .getElementById("downloadButton")
+      .getAttribute("data-url");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = document
+      .getElementById("downloadButton")
+      .getAttribute("data-name");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });

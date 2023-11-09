@@ -4,6 +4,16 @@ dotenv.config();
 const AWS = require("aws-sdk");
 // module for image conversion
 const sharp = require("sharp");
+const {
+  PutObjectCommand,
+  GetObjectCommand,
+  S3Client,
+  PutBucketCorsCommand,
+} = require("@aws-sdk/client-s3");
+const {
+  getSignedUrl,
+  S3RequestPresigner,
+} = require("@aws-sdk/s3-request-presigner");
 
 // * Set up AWS configuration
 const s3 = new AWS.S3();
@@ -14,8 +24,6 @@ const queueName = process.env.AWS_SQS_QUEUE_NAME;
 const sqsQueueUrl = process.env.AWS_SQS_URL;
 
 // * Create the S3 bucket in SQS queue
-const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
-
 const createS3bucket = async () => {
   // * CORS configuration
   const addCorsConfiguration = async () => {
@@ -102,65 +110,66 @@ const createQueue = async (queueName) => {
 // * call createQueue function
 createQueue(queueName);
 
-// * Handling the message and convert the image
+// ! Handling the message and convert the image
 const processImage = async (message) => {
   // Check the message body by logging it
-  console.log("🟢 Receiving SQS message body:", message.Body);
+  console.log("🟢 SQS message body:", message.Body);
   // get the info from sqs message
   const { filename, width, height, format, bucketName } = JSON.parse(
     message.Body
   );
 
   // get the original image from s3
-  const params = {
-    Bucket: bucketName,
-    Key: filename,
-  };
-
-  console.log("🔹 original image S3 getObject Params:", params);
-
   try {
-    const getObjectResponse = await s3.getObject(params).promise();
+    const getObjectResponse = await s3
+      .getObject({
+        Bucket: bucketName,
+        Key: filename,
+      })
+      .promise();
 
-    // Check for empty or null response
     if (!getObjectResponse.Body) {
       throw new Error(`Failed to get object from S3: ${filename}`);
     }
 
+    // console.log("🟢 original image S3 getObject Params:", params);
     const imageBuffer = getObjectResponse.Body;
-
-    // Perform image converting
     const processedBuffer = await sharp(imageBuffer)
-      .resize(width, height) // change the size
-      .toFormat(format) // Change the format
+      .resize(width, height)
+      .toFormat(format)
       .toBuffer();
 
-    const newFilename = filename.split(".")[0] + "." + format;
+    const convertedFilename = "converted_" + filename;
 
-    // Upload the converted image to S3
+    // * upload the converted image to s3
     await s3
       .upload({
         Bucket: bucketName,
-        Key: newFilename,
+        Key: convertedFilename,
         Body: processedBuffer,
         ContentType: `image/${format}`,
       })
       .promise();
-    console.log("🟢 new imagefile:", newFilename);
+
+    console.log("🟢 Converted image file:", convertedFilename);
   } catch (error) {
-    console.error("🔴 Error processing message:", error);
+    console.error("🔴 Error in image processing:", error.message.slice(0, 50));
+    throw error; // Rethrow error to handle it in the calling function
   }
 };
 
 const deleteMessage = async (ReceiptHandle) => {
-  // Delete the processed message from the SQS queue
-  await sqs
-    .deleteMessage({
-      QueueUrl: sqsQueueUrl,
-      ReceiptHandle: ReceiptHandle,
-    })
-    .promise();
-  console.log("🟢 Message Deleted Successfully");
+  try {
+    await sqs
+      .deleteMessage({
+        QueueUrl: sqsQueueUrl,
+        ReceiptHandle: ReceiptHandle,
+      })
+      .promise();
+    console.log("🟢 Message Deleted Successfully");
+  } catch (error) {
+    console.error("🔴 Error deleting SQS message:", error.message(0, 50));
+  }
 };
 
 // * Poll the SQS queue for new messages
@@ -170,33 +179,31 @@ const pollSQSQueue = async () => {
       const { Messages } = await sqs
         .receiveMessage({
           QueueUrl: sqsQueueUrl, // Use the environment variable
-          MaxNumberOfMessages: 10, // get multiple messages
-          WaitTimeSeconds: 20, // Long polling
-          VisibilityTimeout: 180, // 3 minutes
+          MaxNumberOfMessages: 10, // get multiple messages at the same time(maximum: 10)
+          WaitTimeSeconds: 5,
         })
         .promise();
-
       if (Messages && Messages.length > 0) {
-        // Process multiple messages in parallel
-        await Promise.all(
-          Messages.map(async (message) => {
-            try {
-              await processImage(message);
-              await deleteMessage(message.ReceiptHandle);
-            } catch (error) {
-              console.error("🔴 Error processing message:", error);
-            }
-          })
-        );
+        const processingPromises = Messages.map(async (message) => {
+          try {
+            await processImage(message);
+          } catch (error) {
+            console.error("🔴 Error processing a message:", error);
+            // Handle specific message error here (e.g., logging or retrying)
+          } finally {
+            // Attempt to delete message whether or not processing was successful
+            await deleteMessage(message.ReceiptHandle);
+          }
+        });
+
+        await Promise.allSettled(processingPromises);
       }
     } catch (error) {
       console.error("🔴 SQS receiveMessage error:", error);
-      await new Promise((resolve) => setTimeout(resolve, 10000)); // try again after 10 seconds
     }
   }
 };
 
-// * Call pollSQSQueue function
 pollSQSQueue().catch((error) => {
   console.error("🔴 SQS polling error:", error);
 });

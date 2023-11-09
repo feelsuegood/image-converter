@@ -3,14 +3,27 @@ dotenv.config();
 
 const AWS = require("aws-sdk");
 const { v4: uuidv4 } = require("uuid");
-const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {
+  PutObjectCommand,
+  GetObjectCommand,
+  S3Client,
+} = require("@aws-sdk/client-s3");
+const {
+  getSignedUrl,
+  S3RequestPresigner,
+} = require("@aws-sdk/s3-request-presigner");
+const { fromIni } = require("@aws-sdk/credential-providers");
+const { HttpRequest } = require("@smithy/protocol-http");
+const { parseUrl } = require("@smithy/url-parser");
+const { formatUrl } = require("@aws-sdk/util-format-url");
+const { Hash } = require("@smithy/hash-node");
 
 // * Initialize AWS services
-const s3 = new AWS.S3();
-const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
-
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
+const region = process.env.AWS_REGION;
+
+const s3 = new AWS.S3();
+const sqs = new AWS.SQS({ region });
 
 const pageTitle = "Image Converter";
 const fileSize = 10; // * file size limit: 10MB
@@ -29,7 +42,7 @@ const handleHome = (req, res) => {
 // * call-back function that generates pre-signed URL
 const handleGetPresignedUrl = async (req, res) => {
   const format = req.query.format;
-  const client = new S3Client({ region: process.env.AWS_REGION });
+  const client = new S3Client({ region });
   const key = `${uuidv4()}.${format}`;
 
   const command = new PutObjectCommand({
@@ -54,6 +67,7 @@ const handlePostResult = async (req, res) => {
   const height = parseInt(req.body.height, 10);
   const format = req.body.format;
   const filename = req.body.key;
+  const convertedFilename = "converted_" + filename;
   const url = req.body.url;
 
   // * Create a message to send to the SQS queue with relevant information
@@ -75,8 +89,9 @@ const handlePostResult = async (req, res) => {
 
     // Wait for the SQS job to complete
     console.log("🔹 Waiting for message from queue...");
-    const maxWaitTime = 10000; // Maximum wait time (10 seconds)
-    const pollInterval = 1000; // Polling interval (1 second)
+    // til this part is okay
+    const maxWaitTime = 60000; // Maximum wait time (e.g. 20000 = 20 seconds)
+    const pollInterval = 3000; // Polling interval (1 second)
     let elapsedTime = 0;
 
     // Function to check if the processed image file exists in S3
@@ -85,13 +100,15 @@ const handlePostResult = async (req, res) => {
         await s3
           .getObject({
             Bucket: bucketName,
-            Key: filename,
+            Key: convertedFilename,
           })
           .promise();
-
         return true; // Return true if file exists
       } catch (error) {
-        // Return false if file does not exist or other errors occur
+        console.error(
+          "Error checking file existence:",
+          error.message.slice(0, 50)
+        );
         return false;
       }
     };
@@ -106,11 +123,23 @@ const handlePostResult = async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       elapsedTime += pollInterval;
     }
+    // * Generate download url
+    const client = new S3Client({ region });
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: convertedFilename,
+    });
+
+    const downloadUrl = await getSignedUrl(client, command, {
+      expiresIn: 300,
+    }); // * expires in 5 minutes
+    console.log("🟢 Download URL:", downloadUrl.slice(0, 100));
+    console.log("🔹 Key(filename):", convertedFilename);
 
     // * Render the result
     res.json({
-      key: filename,
-      url,
+      key: convertedFilename,
+      url: downloadUrl,
       width,
       height,
       format,
@@ -126,17 +155,21 @@ const handlePostResult = async (req, res) => {
 
 const handleGetResult = async (req, res) => {
   console.log("🔹 handleGetResult req.query:", req.query);
-  const filename = req.query.key; // S3 Object Key
-  const url = req.query.url; // S3 Object URL
+
+  const convertedFilename = req.query.key; // S3 Object Key
+  console.log("🔹 convertedFilename:", convertedFilename);
+
+  const url = req.query.url; // S3 Object download pre-asigned URL
+  console.log("🔹 download url:", url);
   const width = req.query.width;
   const height = req.query.height;
-  console.log("🔹 filename:", filename);
+
   // Get the converted image from S3
   try {
     const retrievedImage = await s3
       .getObject({
         Bucket: bucketName,
-        Key: filename,
+        Key: convertedFilename,
       })
       .promise();
 
@@ -145,7 +178,7 @@ const handleGetResult = async (req, res) => {
     // * Render the result
     res.render("result", {
       pageTitle,
-      resultFilename: filename,
+      resultFilename: convertedFilename,
       resultUrl: url,
       resultDimensions: `${width}x${height}`,
       convertedImage: imageBase64, // Pass the image data to the "result" view template
