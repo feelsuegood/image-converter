@@ -147,22 +147,20 @@ const processImage = async (message) => {
       })
       .promise();
     console.log("🟢 new imagefile:", newFilename);
-
-    try {
-      // Delete the processed message from the SQS queue
-      await sqs
-        .deleteMessage({
-          QueueUrl: sqsQueueUrl,
-          ReceiptHandle: message.ReceiptHandle,
-        })
-        .promise();
-      console.log("🟢 Message Deleted Successfully");
-    } catch (error) {
-      console.log("🔴 Delete Error", error);
-    }
   } catch (error) {
     console.error("🔴 Error processing message:", error);
   }
+};
+
+const deleteMessage = async (ReceiptHandle) => {
+  // Delete the processed message from the SQS queue
+  await sqs
+    .deleteMessage({
+      QueueUrl: sqsQueueUrl,
+      ReceiptHandle: ReceiptHandle,
+    })
+    .promise();
+  console.log("🟢 Message Deleted Successfully");
 };
 
 // * Poll the SQS queue for new messages
@@ -182,7 +180,12 @@ const pollSQSQueue = async () => {
         // Process multiple messages in parallel
         await Promise.all(
           Messages.map(async (message) => {
-            await processImage(message);
+            try {
+              await processImage(message);
+              await deleteMessage(message.ReceiptHandle);
+            } catch (error) {
+              console.error("🔴 Error processing message:", error);
+            }
           })
         );
       }
