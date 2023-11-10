@@ -9,13 +9,6 @@ const {
   S3Client,
 } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-// const fs = require("fs").promises;
-
-// const { fromIni } = require("@aws-sdk/credential-providers");
-// const { HttpRequest } = require("@smithy/protocol-http");
-// const { parseUrl } = require("@smithy/url-parser");
-// const { formatUrl } = require("@aws-sdk/util-format-url");
-// const { Hash } = require("@smithy/hash-node");
 
 // Initialize AWS services
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
@@ -29,7 +22,7 @@ const fileSize = 10; // file size limit: 10MB
 const maxWidth = 1920; // image width limit: 1920px
 const maxHeight = 1080; // image height limit: 1080px
 
-// Main page("/") callback function
+// "/" route callback function
 const handleHome = (req, res) => {
   res.render("index", {
     pageTitle,
@@ -39,7 +32,7 @@ const handleHome = (req, res) => {
   });
 };
 
-// "/presigned-url" page callback function that generates pre-signed URL for uploading original images
+// "/presigned-url" route callback function that generates pre-signed URL for uploading original images
 const handleGetUploadUrl = async (req, res) => {
   const format = req.query.format;
   const client = new S3Client({ region });
@@ -60,6 +53,7 @@ const handleGetUploadUrl = async (req, res) => {
   }
 };
 
+// "/result" route post callback function
 const handlePostResult = async (req, res) => {
   console.log("🔹 handleResult req.body:", req.body);
   // Get the desired image width, height, and format from a user
@@ -68,9 +62,6 @@ const handlePostResult = async (req, res) => {
   const format = req.body.format;
   const filename = req.body.key;
   const convertedFilename = "converted_" + filename;
-
-  // // ! is it okay to delete this?
-  // const url = req.body.url;
 
   // Create a message to send to the SQS queue with the imageinformation
   const messageParams = {
@@ -160,6 +151,7 @@ const handlePostResult = async (req, res) => {
   }
 };
 
+// "/result" get callback function
 const handleGetResult = async (req, res) => {
   const convertedFilename = req.query.key; // S3 Object Key
   const url = req.query.url; // S3 Object download pre-asigned URL

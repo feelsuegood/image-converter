@@ -4,6 +4,7 @@ dotenv.config();
 const express = require("express");
 const Router = express.Router();
 
+// Import callback functions in controller.js to handle routes
 const {
   handleHome,
   handleGetUploadUrl,

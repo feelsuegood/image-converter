@@ -4,17 +4,7 @@ dotenv.config();
 const AWS = require("aws-sdk");
 // module for image conversion
 const sharp = require("sharp");
-// const {
-//   PutObjectCommand,
-//   GetObjectCommand,
-//   S3Client,
-//   PutBucketCorsCommand,
-// } = require("@aws-sdk/client-s3");
 const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
-// const {
-//   getSignedUrl,
-//   S3RequestPresigner,
-// } = require("@aws-sdk/s3-request-presigner");
 
 // Set up AWS configuration
 const s3 = new AWS.S3();
@@ -45,7 +35,7 @@ const createS3bucket = async () => {
 
     try {
       await client.send(corsCommand);
-      console.log(`CORS configuration added to the bucket: ${bucketName}`);
+      console.log(`🔹 CORS configuration added to the bucket: ${bucketName}`);
     } catch (error) {
       console.error(`Error adding CORS configuration: ${error}`);
     }

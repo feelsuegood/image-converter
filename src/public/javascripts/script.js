@@ -1,12 +1,13 @@
 // JavaScript for requesting a pre-signed URL for uploading original images and uploading an image
 async function uploadImage() {
+  // Get the user input
   const width = document.getElementById("width").value;
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
   const fileInput = document.getElementById("image");
   const file = fileInput.files[0];
 
-  // check if all fields are filled
+  // Check if all fields are filled
   if (!file) {
     alert("Please upload an image file.");
     return;
