@@ -12,14 +12,13 @@
     </div>
 
     <!-- ! Download button -->
-    {{!-- <a href="{{resultURL}}" download={{resultUrl}}> --}}
+    <!-- ! Pass the values to script.js -->
     <button
       class="btn btn-success btn-custom"
       id="downloadButton"
-      data-url={{resultUrl}}
-      data-name={{resultFilename}}
+      data-url="{{resultUrl}}"
+      data-filename="{{resultFilename}}"
     >Download Image</button>
-    {{! </a> }}
     <p></p>
 
     <!-- Go Home Button -->
@@ -28,11 +27,7 @@
     <div class="container blank-section"></div>
 
     <!-- * Display the converted image -->
-    <img
-      class="converted-image"
-      src="data:image/jpeg;base64,{{convertedImage}}"
-      alt="Converted Image"
-    />
+    <img class="converted-image" src="{{resultUrl}}" alt="Converted Image" />
     <div class="container blank-section"></div>
   </div>
 </div>
