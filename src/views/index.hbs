@@ -1,5 +1,6 @@
 <!-- * Main container for the whole page -->
 <div class="container all-section">
+
   <!-- * Information section with file requirements -->
   <div class="container info-section">
     <ul>
@@ -9,16 +10,19 @@
       <li>Max width: {{maxWidth}}px, max height: {{maxHeight}}px</li>
     </ul>
   </div>
+
+  <!-- * Form for uploading and converting image -->
   <div class="container">
-    <!-- * Form for uploading and converting image -->
     <form
       id="uploadForm"
       method="post"
       action="/result"
       enctype="multipart/form-data"
     >
+
+      <!-- * Upload an image file -->
       <label for="image">Select Image:</label>
-      {{! Set only image file type acceptable }}
+      <!-- * Only an image file is acceptable to upload -->
       <input type="file" name="image" id="image" accept="image/*" />
       <br />
 
@@ -46,7 +50,7 @@
       />
       <br />
 
-      <!-- * Dropdown for selecting desired image format -->
+      <!-- * Dropdown for selcting desired image format -->
       <label for="format">Desired Format:</label>
       <select name="format" id="format" required>
         <option value="jpeg">JPEG</option>
@@ -97,6 +101,7 @@
       >Cancel</button>
     </form>
   </div>
+
   <!-- Loading message -->
   <div id="loadingIndicator">
     Loading...

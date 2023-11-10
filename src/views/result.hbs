@@ -12,14 +12,7 @@
     </div>
 
     <!-- ! Download button -->
-    {{!-- <a
-      href="data:image/jpeg;base64,{{convertedImage}}"
-      download={{resultFilename}}
-    >
-      <button class="btn btn-success btn-custom">Download Image</button>
-    </a><p></p> --}}
-
-    {{!-- <a href="{{resultUrl}}" download="{{resultFilename}}"> --}}
+    <!-- ! Pass the values to script.js -->
     <button
       class="btn btn-success btn-custom"
       id="downloadButton"
@@ -27,14 +20,6 @@
       data-filename="{{resultFilename}}"
     >Download Image</button>
     <p></p>
-    {{! </a><p></p> }}
-
-    {{!-- <a
-      href="{{resultUrl}}"
-      download="{{resultFilename}}"
-      data-url="{{resultUrl}}"
-      data-filename="{{resultFilename}}"
-    >Download File</a><p></p> --}}
 
     <!-- Go Home Button -->
     <a href="/">

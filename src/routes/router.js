@@ -1,10 +1,12 @@
 const dotenv = require("dotenv");
 dotenv.config();
+
 const express = require("express");
 const Router = express.Router();
+
 const {
   handleHome,
-  handleGetPresignedUrl,
+  handleGetUploadUrl,
   handlePostResult,
   handleGetResult,
 } = require("../controller/controller");
@@ -12,10 +14,11 @@ const {
 /* GET home page. */
 Router.get("/", handleHome);
 
-/* GET Pre-signed URL Request Route for Image Upload */
-Router.get("/presigned-url", handleGetPresignedUrl);
+/* GET generate pre-signed upload URL to upload original images */
+Router.get("/presigned-url", handleGetUploadUrl);
 
-/* POST GET upload and convert image */
+/* POST process to convert images and get pre-signed download URL to download converted images */
+/* GET show the result page */
 Router.route("/result").post(handlePostResult).get(handleGetResult);
 
 module.exports = Router;

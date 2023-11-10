@@ -1,4 +1,4 @@
-// * Import modules
+// Import modules
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -8,6 +8,7 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
+// import router
 const Router = require("../src/routes/router");
 
 const app = express();

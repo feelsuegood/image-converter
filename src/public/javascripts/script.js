@@ -1,11 +1,11 @@
-// JavaScript for requesting a pre-signed URL and uploading an image
+// JavaScript for requesting a pre-signed URL for uploading original images and uploading an image
 async function uploadImage() {
   const width = document.getElementById("width").value;
   const height = document.getElementById("height").value;
   const format = document.getElementById("format").value;
   const fileInput = document.getElementById("image");
-  // * set the file input accept attribute to the selected image type
   const file = fileInput.files[0];
+
   // check if all fields are filled
   if (!file) {
     alert("Please upload an image file.");
@@ -17,10 +17,11 @@ async function uploadImage() {
     alert("Please enter the height.");
     return;
   }
-  // check max file size
-  const maxSize = 10 * 1024 * 1024; // * image file size limit: 10MB
-  const maxWidth = 1920; // * image width limit: 1920px
-  const maxHeight = 1080; //  * image height limit: 1080px
+
+  // Check if the user input is valid or not
+  const maxSize = 10 * 1024 * 1024; // image file size limit: 10MB
+  const maxWidth = 1920; // image width limit: 1920px
+  const maxHeight = 1080; //  image height limit: 1080px
 
   const fileSize = file.size;
   if (fileSize > maxSize) {
@@ -37,21 +38,24 @@ async function uploadImage() {
     height = ""; // reset the input
   }
 
+  // Display loading page
   document.body.classList.add("loading");
   document.getElementById("loadingIndicator").style.display = "block";
 
   try {
-    // * Get the pre-signed URL
+    // Send the request to get the pre-signed URL for uploading the original image
     const response = await fetch("/presigned-url?format=" + format);
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
-    // * Get the data from user and upload image to S3
+
     const data = await response.json();
     data.width = width;
     data.height = height;
     data.format = format;
     console.log("🔹 image conversion data:", data);
+
+    // Upload image to S3 by using pre-signed URL
     const uploadResponse = await fetch(data.url, {
       method: "PUT",
       headers: { "Content-Type": `image/${format}` },
@@ -62,7 +66,7 @@ async function uploadImage() {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
 
-    // * Send the request to process the image
+    // Send the request to get the pre-signed URL for downloading the converted image
     const resultResponse = await fetch("/result", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -74,10 +78,11 @@ async function uploadImage() {
         format,
       }),
     });
-    console.log(resultResponse);
+
     const resultData = await resultResponse.json();
-    console.log(resultData);
-    // * Redirect to the result page
+    console.log("🔹 resultData:", resultData);
+
+    // Redirect to the result page and display result page with the converted image
     if (resultResponse.ok) {
       window.location.href = `/result?key=${encodeURIComponent(
         resultData.key
@@ -99,7 +104,7 @@ async function uploadImage() {
   }
 }
 
-// * Handle button clicks
+// Handle button clicks
 document.addEventListener("DOMContentLoaded", function () {
   // Cancle button
   const cancelButton = document.getElementById("cancelButton");
@@ -141,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// * Handle download button click on result page
+// Handle download button click on result page
 const downloadButton = document.getElementById("downloadButton");
 if (downloadButton) {
   document
@@ -156,37 +161,37 @@ if (downloadButton) {
 
       async function downloadFile(url) {
         try {
-          // S3에서 이미지를 가져옴
+          // Fetch the image from S3
           const response = await fetch(url, { mode: "cors" });
           if (!response.ok) throw new Error(`Error: ${response.statusText}`);
 
-          // 응답 데이터를 Blob으로 변환
+          // Convert response data to a Blob
           const blob = await response.blob();
 
-          // Blob 데이터로부터 URL 생성
+          // Create a URL from the Blob data
           const blobUrl = window.URL.createObjectURL(blob);
 
-          // 가상의 링크 생성
+          // Create a virtual link
           const link = document.createElement("a");
           link.href = blobUrl;
-          link.download = filename; // 여기에 원하는 파일 이름 지정
+          link.download = filename; // Specify the desired file name here
 
-          // 링크를 클릭하여 다운로드
+          // Click the link to download
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
 
-          // Blob URL 해제
+          // Revoke the Blob URL
           window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
           console.error("Download failed:", error);
         }
       }
 
-      // 서버에서 생성한 사전 서명된 URL
+      // The pre-signed URL generated by the server
       const signedUrl = url;
 
-      // 파일 다운로드 실행
+      // Execute file download
       downloadFile(signedUrl);
     });
 }

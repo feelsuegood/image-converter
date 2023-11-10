@@ -8,19 +8,16 @@ const {
   GetObjectCommand,
   S3Client,
 } = require("@aws-sdk/client-s3");
-const {
-  getSignedUrl,
-  S3RequestPresigner,
-} = require("@aws-sdk/s3-request-presigner");
-const fs = require("fs").promises;
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+// const fs = require("fs").promises;
 
-const { fromIni } = require("@aws-sdk/credential-providers");
-const { HttpRequest } = require("@smithy/protocol-http");
-const { parseUrl } = require("@smithy/url-parser");
-const { formatUrl } = require("@aws-sdk/util-format-url");
-const { Hash } = require("@smithy/hash-node");
+// const { fromIni } = require("@aws-sdk/credential-providers");
+// const { HttpRequest } = require("@smithy/protocol-http");
+// const { parseUrl } = require("@smithy/url-parser");
+// const { formatUrl } = require("@aws-sdk/util-format-url");
+// const { Hash } = require("@smithy/hash-node");
 
-// * Initialize AWS services
+// Initialize AWS services
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 const region = process.env.AWS_REGION;
 
@@ -28,11 +25,11 @@ const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region });
 
 const pageTitle = "Image Converter";
-const fileSize = 10; // * file size limit: 10MB
-const maxWidth = 1920; // * image width limit: 1920px
-const maxHeight = 1080; //  * image height limit: 1080px
+const fileSize = 10; // file size limit: 10MB
+const maxWidth = 1920; // image width limit: 1920px
+const maxHeight = 1080; // image height limit: 1080px
 
-// * Handle main page rendering
+// Main page("/") callback function
 const handleHome = (req, res) => {
   res.render("index", {
     pageTitle,
@@ -41,8 +38,9 @@ const handleHome = (req, res) => {
     maxHeight,
   });
 };
-// * call-back function that generates pre-signed URL
-const handleGetPresignedUrl = async (req, res) => {
+
+// "/presigned-url" page callback function that generates pre-signed URL for uploading original images
+const handleGetUploadUrl = async (req, res) => {
   const format = req.query.format;
   const client = new S3Client({ region });
   const key = `${uuidv4()}.${format}`;
@@ -53,7 +51,7 @@ const handleGetPresignedUrl = async (req, res) => {
   });
 
   try {
-    const url = await getSignedUrl(client, command, { expiresIn: 300 }); // * expires in 5 minutes
+    const url = await getSignedUrl(client, command, { expiresIn: 300 }); // expires in 5 minutes
     console.log("🔹 Pre-signed URL generated:", url.slice(0, 100));
     console.log("🔹 Key(filename):", key);
     res.json({ key, url });
@@ -70,9 +68,11 @@ const handlePostResult = async (req, res) => {
   const format = req.body.format;
   const filename = req.body.key;
   const convertedFilename = "converted_" + filename;
-  const url = req.body.url;
 
-  // * Create a message to send to the SQS queue with relevant information
+  // // ! is it okay to delete this?
+  // const url = req.body.url;
+
+  // Create a message to send to the SQS queue with the imageinformation
   const messageParams = {
     QueueUrl: process.env.AWS_SQS_URL,
     MessageBody: JSON.stringify({
@@ -83,15 +83,13 @@ const handlePostResult = async (req, res) => {
       bucketName,
     }),
   };
-  // * handle image conversion rendering - sening message to SQS
+  // sending the message to SQS Queue
   try {
-    // Send the message to the SQS queue
     await sqs.sendMessage(messageParams).promise();
     console.log("🔹 Sending SQS message body:", messageParams.MessageBody);
 
     // Wait for the SQS job to complete
     console.log("🔹 Waiting for message from queue...");
-    // til this part is okay
     const maxWaitTime = 60000; // Maximum wait time (e.g. 20000 = 20 seconds)
     const pollInterval = 3000; // Polling interval (1 second)
     let elapsedTime = 0;
@@ -125,23 +123,27 @@ const handlePostResult = async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       elapsedTime += pollInterval;
     }
-    // * Generate download url
+    // Generate download URL for the converted image
     const client = new S3Client({ region });
     const command = new GetObjectCommand({
       Bucket: bucketName,
       Key: convertedFilename,
-      ContentDisposition: "attachment",
     });
 
+    // const downloadUrl = await getSignedUrl(client, command, {
+    //   expiresIn: 604800, // !! expires in 7 days (for scaling test)
+    //   ContentDisposition: "attachment",
+    // });
+
     const downloadUrl = await getSignedUrl(client, command, {
-      expiresIn: 300,
+      expiresIn: 300, // * expires in 5 mins
       ContentDisposition: "attachment",
-    }); // * expires in 5 minutes
+    });
 
     console.log("🟢 Download URL:", downloadUrl);
     console.log("🔹 Key(filename):", convertedFilename);
 
-    // * Render the result
+    // Pass the converted image information to the "result" view template
     res.json({
       key: convertedFilename,
       url: downloadUrl,
@@ -153,21 +155,19 @@ const handlePostResult = async (req, res) => {
     console.error(`🔴 Post Result Error: ${error.message}`);
     res.render("error", {
       pageTitle,
-      result: `Error uploading to S3: ${error.message}`,
+      message: `Error uploading to S3: ${error.message}`,
     });
   }
 };
 
 const handleGetResult = async (req, res) => {
-  console.log("🔹 handleGetResult req.query:", req.query);
-
   const convertedFilename = req.query.key; // S3 Object Key
-  console.log("🔹 convertedFilename:", convertedFilename);
-
   const url = req.query.url; // S3 Object download pre-asigned URL
-  console.log("🔹 download url:", url);
   const width = req.query.width;
   const height = req.query.height;
+  // check the values
+  console.log("🔹 convertedFilename:", convertedFilename);
+  console.log("🔹 download url:", url);
 
   // Get the converted image from S3
   try {
@@ -180,7 +180,7 @@ const handleGetResult = async (req, res) => {
 
     const imageBase64 = retrievedImage.Body.toString("base64");
 
-    // * Render the result
+    // Render the result page
     res.render("result", {
       pageTitle,
       resultFilename: convertedFilename,
@@ -191,7 +191,7 @@ const handleGetResult = async (req, res) => {
   } catch (error) {
     console.error(`🔴 Error: ${error.message}`);
     res.render("error", {
-      pageTitle: "Error",
+      pageTitle,
       message: `Error retrieving converted image: ${error.message}`,
     });
   }
@@ -200,7 +200,7 @@ const handleGetResult = async (req, res) => {
 // Export callback function to router
 module.exports = {
   handleHome,
-  handleGetPresignedUrl,
+  handleGetUploadUrl,
   handlePostResult,
   handleGetResult,
 };
