@@ -39,9 +39,12 @@ async function uploadImage() {
     height = ""; // reset the input
   }
 
-  // Display loading page
-  document.body.classList.add("loading");
-  document.getElementById("loadingIndicator").style.display = "block";
+  // Display the processingText
+  document.getElementById("processingText").style.display = "block";
+  // Scroll through the screen to processingText.
+  setTimeout(function () {
+    processingText.scrollIntoView({ behavior: "smooth" });
+  }, 100);
 
   try {
     // Send the request to get the pre-signed URL for uploading the original image
@@ -112,7 +115,12 @@ document.addEventListener("DOMContentLoaded", function () {
   if (cancelButton) {
     cancelButton.addEventListener("click", function (e) {
       e.preventDefault();
+      // Hide the 'processingText'
+      processingText.style.display = "none";
+      // Navigate to the root router
       window.location.href = "/";
+      // Clear the timeout if the cancel button is clicked
+      clearTimeout(timeout);
     });
   }
 
