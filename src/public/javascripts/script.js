@@ -1,3 +1,7 @@
+// Make a controller to stop fetch requests
+const abortController = new AbortController();
+const signal = abortController.signal;
+
 // JavaScript for requesting a pre-signed URL for uploading original images and uploading an image
 async function uploadImage() {
   // Get the user input
@@ -48,7 +52,7 @@ async function uploadImage() {
 
   try {
     // Send the request to get the pre-signed URL for uploading the original image
-    const response = await fetch("/presigned-url?format=" + format);
+    const response = await fetch("/presigned-url?format=" + format, { signal });
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
@@ -57,34 +61,42 @@ async function uploadImage() {
     data.width = width;
     data.height = height;
     data.format = format;
-    console.log("🔹 image conversion data:", data);
 
     // Upload image to S3 by using pre-signed URL
-    const uploadResponse = await fetch(data.url, {
-      method: "PUT",
-      headers: { "Content-Type": `image/${format}` },
-      body: file,
-    });
-    console.log("🔹 uploadResponse:", uploadResponse);
+    const uploadResponse = await fetch(
+      data.url,
+      {
+        method: "PUT",
+        headers: { "Content-Type": `image/${format}` },
+        body: file,
+      },
+      { signal }
+    );
+
+    console.log("🔹 Getting uploadResponse succeeded");
     if (!uploadResponse.ok) {
       throw new Error(`Failed to upload image: ${uploadResponse.status}`);
     }
 
     // Send the request to get the pre-signed URL for downloading the converted image
-    const resultResponse = await fetch("/result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        key: data.key,
-        url: data.url,
-        width,
-        height,
-        format,
-      }),
-    });
+    const resultResponse = await fetch(
+      "/result",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: data.key,
+          url: data.url,
+          width,
+          height,
+          format,
+        }),
+      },
+      { signal }
+    );
 
     const resultData = await resultResponse.json();
-    console.log("🔹 resultData:", resultData);
+    console.log("🔹Getting resultData succeeded");
 
     // Redirect to the result page and display result page with the converted image
     if (resultResponse.ok) {
@@ -99,8 +111,11 @@ async function uploadImage() {
       throw new Error(`Error in image processing: ${resultResponse.status}`);
     }
   } catch (error) {
-    console.error("Error:", error);
-    alert(error.message);
+    if (error.name === "AbortError") {
+      console.log("Fetch request was cancelled");
+    } else {
+      console.error("Error:", error);
+    }
   } finally {
     // Hide loading message
     document.getElementById("loadingIndicator").style.display = "none";
@@ -110,12 +125,14 @@ async function uploadImage() {
 
 // Handle button clicks
 document.addEventListener("DOMContentLoaded", function () {
-  // Cancle button
+  // Cancel button
   const cancelButton = document.getElementById("cancelButton");
   if (cancelButton) {
     cancelButton.addEventListener("click", function (e) {
       e.preventDefault();
-      // Hide the 'processingText'
+      // Use controller to stop any fetch requests
+      abortController.abort();
+      //Cancel flag
       processingText.style.display = "none";
       // Navigate to the root router
       window.location.href = "/";
@@ -171,7 +188,7 @@ if (downloadButton) {
       async function downloadFile(url) {
         try {
           // Fetch the image from S3
-          const response = await fetch(url, { mode: "cors" });
+          const response = await fetch(url, { mode: "cors" }, { signal });
           if (!response.ok) throw new Error(`Error: ${response.statusText}`);
 
           // Convert response data to a Blob
