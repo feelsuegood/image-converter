@@ -55,7 +55,6 @@ const handleGetUploadUrl = async (req, res) => {
 
 // "/result" route post callback function
 const handlePostResult = async (req, res) => {
-  console.log("🔹 handleResult req.body:", req.body);
   // Get the desired image width, height, and format from a user
   const width = parseInt(req.body.width, 10);
   const height = parseInt(req.body.height, 10);
@@ -131,7 +130,7 @@ const handlePostResult = async (req, res) => {
       ContentDisposition: "attachment",
     });
 
-    console.log("🟢 Download URL:", downloadUrl);
+    console.log("🔹 Download URL:", downloadUrl.slice(0, 100));
     console.log("🔹 Key(filename):", convertedFilename);
 
     // Pass the converted image information to the "result" view template
@@ -157,9 +156,6 @@ const handleGetResult = async (req, res) => {
   const url = req.query.url; // S3 Object download pre-asigned URL
   const width = req.query.width;
   const height = req.query.height;
-  // check the values
-  console.log("🔹 convertedFilename:", convertedFilename);
-  console.log("🔹 download url:", url);
 
   // Get the converted image from S3
   try {
