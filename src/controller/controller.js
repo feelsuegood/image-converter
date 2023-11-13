@@ -80,7 +80,7 @@ const handlePostResult = async (req, res) => {
 
     // Wait for the SQS job to complete
     console.log("🔹 Waiting for message from queue...");
-    const maxWaitTime = 5000; // Maximum wait time (e.g. 10000 = 10 seconds)
+    const maxWaitTime = 5000; // Maximum wait time (e.g. 5000 = 5 seconds)
     const pollInterval = 3000; // Polling interval (1 second)
     let elapsedTime = 0;
 
@@ -180,7 +180,7 @@ const handleGetResult = async (req, res) => {
     console.error(`🔴 Error: ${error.message}`);
     res.render("error", {
       pageTitle,
-      message: `Error retrieving converted image: ${error.message}`,
+      message: `Error retrieving converted image. Please try again with a different image file.`,
     });
   }
 };
