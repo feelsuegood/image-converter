@@ -180,7 +180,7 @@ const handleGetResult = async (req, res) => {
     console.error(`🔴 Error: ${error.message}`);
     res.render("error", {
       pageTitle,
-      message: `Error retrieving converted image. Please try again with a different image file.`,
+      message: `Error retrieving converted image: ${error.message}`,
     });
   }
 };
