@@ -6,7 +6,14 @@ const AWS = require("aws-sdk");
 const sharp = require("sharp");
 const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
 
-// Set up AWS configuration
+// Configure AWS
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  sessionToken: process.env.AWS_SESSION_TOKEN,
+  region: process.env.AWS_REGION,
+});
+
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
