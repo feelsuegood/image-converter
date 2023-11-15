@@ -42,7 +42,7 @@ const handleHome = (req, res) => {
 // "/presigned-url" route callback function that generates pre-signed URL for uploading original images
 const handleGetUploadUrl = async (req, res) => {
   const format = req.query.format;
-  const client = new S3Client({ region });
+  const client = new S3Client({ region: process.env.AWS_REGION });
   const key = `${uuidv4()}.${format}`;
 
   const command = new PutObjectCommand({
@@ -121,7 +121,7 @@ const handlePostResult = async (req, res) => {
       elapsedTime += pollInterval;
     }
     // Generate download URL for the converted image
-    const client = new S3Client({ region });
+    const client = new S3Client({ region: process.env.AWS_REGION });
     const command = new GetObjectCommand({
       Bucket: bucketName,
       Key: convertedFilename,
