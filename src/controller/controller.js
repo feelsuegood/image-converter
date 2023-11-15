@@ -12,10 +12,17 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 // Initialize AWS services
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
-const region = process.env.AWS_REGION;
 
 const s3 = new AWS.S3();
 const sqs = new AWS.SQS({ region });
+
+// Configure AWS
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  sessionToken: process.env.AWS_SESSION_TOKEN,
+  region: process.env.AWS_REGION,
+});
 
 const pageTitle = "Image Converter";
 const fileSize = 10; // file size limit: 10MB
