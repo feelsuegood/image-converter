@@ -6,10 +6,6 @@ const AWS = require("aws-sdk");
 const sharp = require("sharp");
 const { S3Client, PutBucketCorsCommand } = require("@aws-sdk/client-s3");
 
-// Set up AWS configuration
-const s3 = new AWS.S3();
-const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
-
 // Configure AWS
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -17,6 +13,9 @@ AWS.config.update({
   sessionToken: process.env.AWS_SESSION_TOKEN,
   region: process.env.AWS_REGION,
 });
+
+const s3 = new AWS.S3();
+const sqs = new AWS.SQS({ region: process.env.AWS_REGION });
 
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 const queueName = process.env.AWS_SQS_QUEUE_NAME;
